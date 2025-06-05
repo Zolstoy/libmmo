@@ -1,0 +1,56 @@
+name: WINDOWS|BUILD
+permissions:
+  contents: read
+  actions: read
+  checks: none
+  deployments: none
+  issues: none
+  discussions: none
+  packages: none
+  pull-requests: none
+  repository-projects: none
+  security-events: none
+  statuses: none
+
+on: 
+  push:
+    branches:
+      - main
+    paths:
+      - '**.hpp'
+      - '**.cpp'
+      - 'meson.build'
+      - '.github/workflows/windows_*.yml'
+
+jobs:
+  build:
+    name: Build
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: MarkusJx/install-boost@v2
+        with:
+          boost_version: 1.87.0
+          platform_version: 2022
+          toolset: msvc
+          link: shared
+
+      - uses: ilammy/msvc-dev-cmd@v1
+
+      - run: pip install meson ninja
+
+      - run: |
+          $PWD=pwd
+          meson setup --backend=ninja --buildtype debug build --default-library=static
+        env:
+          BOOST_ROOT: "${{ github.workspace }}/boost/boost"
+        
+      - run: meson compile -C build
+
+      - run: tar -zcvf data.tar.gz build meson.build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: data
+          path: data.tar.gz

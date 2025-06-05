@@ -1,0 +1,66 @@
+name: MACOS|BUILD
+permissions:
+  contents: read
+  actions: read
+  checks: none
+  deployments: none
+  issues: none
+  discussions: none
+  packages: none
+  pull-requests: none
+  repository-projects: none
+  security-events: none
+  statuses: none
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '**.hpp'
+      - '**.cpp'
+      - 'meson.build'
+      - '.github/workflows/macos_*.yml'
+
+jobs:
+  build:
+    name: Build
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: MarkusJx/install-boost@v2
+        with:
+          boost_version: 1.87.0
+          platform_version: 15
+          toolset: clang
+          arch: aarch64
+
+      - run: |
+          brew install llvm@20
+          brew install lld@20
+
+      - run: pip install meson ninja
+
+      - run: PATH="/opt/homebrew/opt/llvm@20/bin:$PATH" meson setup --buildtype debug --backend=ninja build --default-library=static
+        env:
+          BOOST_ROOT: "${{ github.workspace }}/boost/boost"
+          LDFLAGS: "-L/opt/homebrew/opt/llvm/lib -L/opt/homebrew/opt/llvm/lib/c++ -L/opt/homebrew/opt/llvm/lib/unwind -lunwind"
+          CPPFLAGS: "-I/opt/homebrew/opt/llvm/include"
+          CXX: "clang++"
+          LD: "lld"
+          
+      - run: PATH="/opt/homebrew/opt/llvm@20/bin:$PATH" meson compile -C build
+        env:
+          BOOST_ROOT: "${{ github.workspace }}/boost/boost"
+          LDFLAGS: "-L/opt/homebrew/opt/llvm/lib -L/opt/homebrew/opt/llvm/lib/c++ -L/opt/homebrew/opt/llvm/lib/unwind -lunwind"
+          CPPFLAGS: "-I/opt/homebrew/opt/llvm/include"
+          CXX: "clang++"
+          LD: "lld"
+
+      - run: tar -zcvf data.tar.gz build meson.build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: data
+          path: data.tar.gz

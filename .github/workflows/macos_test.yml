@@ -1,0 +1,49 @@
+name: MACOS|TESTS
+permissions:
+  contents: read
+  actions: read
+  checks: none
+  deployments: none
+  issues: none
+  discussions: none
+  packages: none
+  pull-requests: none
+  repository-projects: none
+  security-events: none
+  statuses: none
+
+on: 
+  workflow_run:
+    workflows: [MACOS|BUILD]
+    branches: [main]
+    types: [completed]
+
+jobs:
+  tests:
+    name: Tests
+    runs-on: macos-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - id: get_event_json
+        run: |
+          content=`cat ${GITHUB_EVENT_PATH}`
+          content="${content//'%'/''}"
+          content="${content//$'\n'/''}"
+          content="${content//$'\r'/''}"
+          echo "value=${content}" >> ${GITHUB_OUTPUT}
+
+      - run: echo "value="${{ fromJson(steps.get_event_json.outputs.value).workflow_run.id }} >> ${GITHUB_OUTPUT}
+        id: get_run_id
+
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ steps.get_run_id.outputs.value }}
+          name: data
+          github-token: ${{ secrets.GH_PAT }}
+
+      - run: tar zxvf install.tar.gz
+
+      - run: LDFLAGS=-L./install/lib ./build/test-instance-with-asio
+      - run: LDFLAGS=-L./install/lib ./build/network
+      - run: LDFLAGS=-L./install/lib ./build/database
+      - run: LDFLAGS=-L./install/lib ./build/siege
