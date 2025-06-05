@@ -19,7 +19,6 @@
 #include "event.hpp"
 #include "session.hpp"
 
-
 using namespace boost;
 
 #define _INSTANCE_LOG(level, fmt, ...) \
