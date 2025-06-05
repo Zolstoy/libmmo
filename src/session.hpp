@@ -19,8 +19,8 @@
 #include <cereal/archives/json.hpp>
 #include <spdlog/spdlog.h>
 
-#include "include/mmo/event.hpp"
-#include "include/mmo/protocol.hpp"
+#include "event.hpp"
+#include "protocol.hpp"
 
 #define _SESSION_LOG(level, fmt, ...) \
     spdlog::level("[\033[38;2;0;210;120m{:15}\033[39;49m]" fmt, client_endpoint_.address().to_string(), __VA_ARGS__)

@@ -1,6 +1,7 @@
 #include "instance.hpp"
 
 #include <expected>
+#include <stdarg.h>
 #include <string>
 
 #include <boost/asio.hpp>
@@ -17,6 +18,7 @@
 #include "error.hpp"
 #include "event.hpp"
 #include "session.hpp"
+
 
 using namespace boost;
 
