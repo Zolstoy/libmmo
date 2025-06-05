@@ -15,6 +15,7 @@ else
 endif
 
 boost_headers = dependency('boost')
+openssl = dependency('openssl')
 
 mmo = library('mmo',
   [
@@ -31,7 +32,7 @@ mmo = library('mmo',
     boost_headers,
     dependency('cereal'),
     dependency('libcurl'),
-    dependency('openssl'),
+    openssl,
     dependency('perlin_noise'),
     dependency('spdlog', default_options: ['default_library=static']),
     dependency('sqlitecpp', default_options: ['default_library=static']),
@@ -58,25 +59,25 @@ test_database = executable('test-database',
 )
 test('database', test_database, args : ['--gtest_color=yes'])
 
-test_instance = executable('test-instance-with-asio',
+test_instance = executable('test-instance',
   [
     'tests/common.cpp',
     'tests/instance.cpp',
   ],
-  dependencies: [gtest, gtest_main, boost_headers],
+  dependencies: [gtest, gtest_main, boost_headers, openssl],
   include_directories: include_directories('include'),
   cpp_args: common_cpp_args,
   override_options: override_args,
   link_with: mmo
 )
-test('instance-with-asio', test_instance, args : ['--gtest_color=yes'])
+test('instance', test_instance, args : ['--gtest_color=yes'])
 
 test_network = executable('test-network',
   [
     'tests/common.cpp',
     'tests/network.cpp',
   ],
-  dependencies: [gtest, gtest_main, boost_headers],
+  dependencies: [gtest, gtest_main, boost_headers, openssl],
   include_directories: include_directories('include'),
   cpp_args: common_cpp_args,
   override_options: override_args,
@@ -89,7 +90,7 @@ test_siege = executable('test-siege',
     'tests/common.cpp',
     'tests/siege.cpp',
   ],
-  dependencies: [gtest, gtest_main, boost_headers],
+  dependencies: [gtest, gtest_main, boost_headers, openssl],
   include_directories: include_directories('include'),
   cpp_args: common_cpp_args,
   override_options: override_args,
