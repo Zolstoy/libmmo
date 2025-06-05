@@ -6,7 +6,7 @@
 
 #include <spdlog/spdlog.h>
 
-#include "../include/mmo/utils.hpp"
+#include "../utils.hpp"
 
 using namespace boost;
 

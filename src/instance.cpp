@@ -16,7 +16,7 @@
 #include "database.hpp"
 #include "error.hpp"
 #include "event.hpp"
-#include "private/session.hpp"
+#include "session.hpp"
 
 using namespace boost;
 
@@ -26,11 +26,7 @@ using namespace boost;
 namespace mmo {
 
 struct inner {
-#ifdef MMO_WITH_ASIO
-    boost::asio::io_context& io_context;
-#else
-    boost::asio::io_context io_context;
-#endif
+    boost::asio::io_context                         io_context;
     std::shared_ptr<boost::asio::ssl::context>      ssl_context;
     std::shared_ptr<boost::asio::ip::tcp::acceptor> acceptor;
     std::vector<std::shared_ptr<tls_session>>       player_sessions;

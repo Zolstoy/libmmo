@@ -6,7 +6,7 @@
 #include <curl/curl.h>
 #include <curl/easy.h>
 
-#include "../include/mmo/utils.hpp"
+#include "../utils.hpp"
 
 namespace mmo {
 

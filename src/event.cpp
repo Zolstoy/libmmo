@@ -1,4 +1,4 @@
-#include "include/mmo/event.hpp"
+#include "event.hpp"
 
 namespace mmo {
 namespace events {
