@@ -15,6 +15,7 @@ else
 endif
 
 boost_headers = dependency('boost')
+cereal = dependency('cereal')
 openssl = dependency('openssl')
 
 mmo = library('mmo',
@@ -30,7 +31,7 @@ mmo = library('mmo',
 ],
   dependencies: [
     boost_headers,
-    dependency('cereal'),
+    cereal,
     dependency('libcurl'),
     openssl,
     dependency('perlin_noise'),
