@@ -11,18 +11,11 @@
 #include <mmo/instance.hpp>
 #include <mmo/protocol.hpp>
 
-#include <cereal/archives/json.hpp>
-#include <fmt/color.h>
 #include <gtest/gtest.h>
-#include <spdlog/common.h>
-#include <spdlog/pattern_formatter.h>
-#include <spdlog/sinks/stdout_color_sinks.h>
-#include <spdlog/spdlog.h>
 
 #include "mmo/event.hpp"
 
 #include "common.hpp"
-
 
 using namespace boost;
 
