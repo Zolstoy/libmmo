@@ -2,7 +2,7 @@ project('hyper-block', 'cpp', version : '0.1.0', meson_version : '>=1.0.0')
 
 if host_machine.system() == 'windows'
  override_args = ['cpp_std=vc++latest']
- common_cpp_args =  ['-D_WIN32_WINNT=0x0601', '/bigobj', '-DHYPERBLOCK_SYSTEM_WINDOWS']
+ common_cpp_args =  ['-D_WIN32_WINNT=0x0601', '/bigobj']
 else
  override_args = ['cpp_std=c++23']
  common_cpp_args = []
@@ -22,7 +22,6 @@ spdlog = dependency('spdlog', default_options: '--default-library=static')
 sqlite = dependency('sqlitecpp')
 perlin_noise = dependency('perlin_noise')
 curl = dependency('libcurl')
-argparse = dependency('argparse')
 
 dependencies = [
   boost_headers,
@@ -63,26 +62,6 @@ lib_asio = library('hyperblock-asio',
   cpp_args: common_cpp_args + '-DHYPERBLOCK_BUILDING_THE_LIB' + '-DHYPERBLOCK_WITH_ASIO',
   override_options: override_args,
   install: true
-)
-
-server = executable('hyperblock-server',
-  ['src/bin/server.cpp', 'src/common/common.cpp'],
-  dependencies : [argparse, spdlog],
-  include_directories : include_directories('src/bin', 'src/include'),
-  cpp_args : common_cpp_args,
-  override_options: override_args,
-  install: true,
-  link_with: lib
-)
-
-tools = executable('hyperblock-tools',
-  ['src/bin/tools.cpp', 'src/common/common.cpp'],
-  dependencies : [argparse, spdlog],
-  include_directories : include_directories('src/bin', 'src/include'),
-  cpp_args : common_cpp_args,
-  override_options: override_args,
-  install: true,
-  link_with: lib
 )
 
 test_database = executable('test-database',
