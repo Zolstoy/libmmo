@@ -14,7 +14,7 @@
 #include <openssl/sha.h>
 #include <spdlog/spdlog.h>
 
-#include "../utils.hpp"
+#include "utils.hpp"
 
 namespace mmo {
 

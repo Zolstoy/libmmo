@@ -35,21 +35,11 @@ struct inner {
     std::string                                     key_pem;
     std::function<user_callback_proto>              user_callback;
 
-#ifdef MMO_WITH_ASIO
-    inner(boost::asio::io_context& io_context, std::string const& cert_pem, std::string const& key_pem,
-          std::function<user_callback_proto>&& user_callback)
-        : io_context(io_context)
-        , cert_pem(cert_pem)
-        , key_pem(key_pem)
-        , user_callback(std::move(user_callback))
-    {}
-#else
     inner(std::string const& cert_pem, std::string const& key_pem, std::function<user_callback_proto>&& user_callback)
         : cert_pem(cert_pem)
         , key_pem(key_pem)
         , user_callback(std::move(user_callback))
     {}
-#endif
 
     void on_accept(instance* owner, const boost::system::error_code& ec, boost::asio::ip::tcp::socket socket)
     {
@@ -116,7 +106,6 @@ instance::run_async() noexcept
     return 0;
 }
 
-#if !defined(MMO_WITH_ASIO)
 std::expected<std::tuple<>, error>
 instance::run() noexcept
 {
@@ -144,7 +133,6 @@ instance::run() noexcept
         t.join();
     return std::tuple<>();
 }
-#endif
 
 void
 instance::do_accept()

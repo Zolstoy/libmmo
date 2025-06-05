@@ -6,7 +6,7 @@
 
 #include <spdlog/spdlog.h>
 
-#include "../utils.hpp"
+#include "utils.hpp"
 
 using namespace boost;
 

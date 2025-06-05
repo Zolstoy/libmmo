@@ -29,6 +29,7 @@ class MMO_API instance
              std::function<user_callback_proto>&& step_callback) noexcept;
 
    public:
+    std::expected<short, error>        run_async() noexcept;
     std::expected<std::tuple<>, error> run() noexcept;
 
    private:
