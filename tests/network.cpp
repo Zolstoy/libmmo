@@ -20,8 +20,6 @@
 
 #include "mmo/event.hpp"
 
-#include "../common/common.hpp"
-
 using namespace boost;
 
 struct result {
