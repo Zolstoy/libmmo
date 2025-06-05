@@ -1,4 +1,4 @@
-#include "include/mmo/database.hpp"
+#include "database.hpp"
 
 #include <exception>
 #include <expected>
@@ -17,9 +17,9 @@
 #include <openssl/sha.h>
 #include <spdlog/spdlog.h>
 
-#include "include/mmo/error.hpp"
-#include "include/mmo/player.hpp"
-#include "include/mmo/utils.hpp"
+#include "error.hpp"
+#include "player.hpp"
+#include "utils.hpp"
 
 namespace mmo {
 

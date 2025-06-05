@@ -1,4 +1,4 @@
-#include "include/mmo/player.hpp"
+#include "player.hpp"
 
 namespace mmo {
 

@@ -1,4 +1,4 @@
-#include "include/mmo/instance.hpp"
+#include "instance.hpp"
 
 #include <expected>
 #include <string>
@@ -13,11 +13,10 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 
-#include "include/mmo/database.hpp"
-#include "include/mmo/error.hpp"
-#include "include/mmo/event.hpp"
-
-#include "session.hpp"
+#include "database.hpp"
+#include "error.hpp"
+#include "event.hpp"
+#include "private/session.hpp"
 
 using namespace boost;
 
@@ -75,15 +74,6 @@ struct inner {
     }
 };
 
-#ifdef MMO_WITH_ASIO
-instance::instance(asio::io_context& io_context, std::string const& world_name, short port, std::string const& cert_pem,
-                   std::string const& key_pem, std::function<user_callback_proto>&& step_callback) noexcept
-    : inner_(reinterpret_cast<void*>(new inner(io_context, cert_pem, key_pem, std::move(step_callback))))
-    , port_(port)
-    , is_running_(false)
-    , database_(world_name)
-{}
-#else
 instance::instance(std::string const& world_name, short port, std::string const& cert_pem, std::string const& key_pem,
                    std::function<user_callback_proto>&& step_callback) noexcept
     : inner_(reinterpret_cast<void*>(new inner(cert_pem, key_pem, std::move(step_callback))))
@@ -91,10 +81,9 @@ instance::instance(std::string const& world_name, short port, std::string const&
     , is_running_(false)
     , database_(world_name)
 {}
-#endif
 
-MMO_API std::expected<short, error>
-        instance::run_async() noexcept
+std::expected<short, error>
+instance::run_async() noexcept
 {
     auto inner_data = reinterpret_cast<inner*>(inner_);
     if (is_running_)

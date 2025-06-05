@@ -38,7 +38,7 @@ mmo = library('mmo',
     dependency('spdlog', default_options: ['default_library=static']),
     dependency('sqlitecpp', default_options: ['default_library=static']),
 ],
-  include_directories: include_directories('include/mmo', 'include/mmo/private'),
+  include_directories: include_directories('include/mmo'),
   cpp_args: common_cpp_args + '-DMMO_BUILDING_THE_LIB',
   override_options: override_args,
   install: true
