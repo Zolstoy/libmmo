@@ -5,7 +5,7 @@
 #define MMO_VERSION_PATCH 0
 
 #if !defined(MMO_STATIC)
- #if defined(MMO_SYSTEM_WINDOWS)
+ #if defined(_WIN32)
   #define MMO_API_EXPORT __declspec(dllexport)
   #define MMO_API_IMPORT __declspec(dllimport)
  #else
