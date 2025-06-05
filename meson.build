@@ -9,7 +9,7 @@ else
 endif
 
 if get_option('default_library') == 'static'
-  common_cpp_args += ['-DMMO_STATIC']
+  common_cpp_args += '-DMMO_STATIC'
 else
   common_cpp_args += '-DBOOST_ALL_DYN_LINK'
 endif
@@ -33,7 +33,7 @@ mmo = library('mmo',
     dependency('libcurl'),
     dependency('openssl'),
     dependency('perlin_noise'),
-    dependency('spdlog', default_options: '--default-library=static'),
+    dependency('spdlog', default_options: ['default_library=static', 'std_format=enabled']),
     dependency('sqlitecpp'),
 ],
   include_directories: include_directories('include/mmo', 'include/mmo/private'),
@@ -43,10 +43,14 @@ mmo = library('mmo',
 )
 
 gtest = dependency('gtest')
+gtest_main = dependency('gtest_main')
 
 test_database = executable('test-database',
-  'tests/database.cpp',
-  dependencies: gtest,
+  [
+    'tests/common.cpp',
+    'tests/database.cpp',
+  ],
+  dependencies: [gtest, gtest_main],
   include_directories: include_directories('include'),
   cpp_args: common_cpp_args,
   override_options: override_args,
@@ -55,8 +59,11 @@ test_database = executable('test-database',
 test('database', test_database, args : ['--gtest_color=yes'])
 
 test_instance = executable('test-instance-with-asio',
-  'tests/instance.cpp',
-  dependencies: [gtest, boost_headers],
+  [
+    'tests/common.cpp',
+    'tests/instance.cpp',
+  ],
+  dependencies: [gtest, gtest_main, boost_headers],
   include_directories: include_directories('include'),
   cpp_args: common_cpp_args,
   override_options: override_args,
@@ -65,8 +72,11 @@ test_instance = executable('test-instance-with-asio',
 test('instance-with-asio', test_instance, args : ['--gtest_color=yes'])
 
 test_network = executable('test-network',
-  'tests/network.cpp',
-  dependencies: [gtest, boost_headers],
+  [
+    'tests/common.cpp',
+    'tests/network.cpp',
+  ],
+  dependencies: [gtest, gtest_main, boost_headers],
   include_directories: include_directories('include'),
   cpp_args: common_cpp_args,
   override_options: override_args,
@@ -75,8 +85,11 @@ test_network = executable('test-network',
 test('network', test_network, args : ['--gtest_color=yes'])
 
 test_siege = executable('test-siege',
-  'tests/siege.cpp',
-  dependencies: [gtest, boost_headers],
+  [
+    'tests/common.cpp',
+    'tests/siege.cpp',
+  ],
+  dependencies: [gtest, gtest_main, boost_headers],
   include_directories: include_directories('include'),
   cpp_args: common_cpp_args,
   override_options: override_args,

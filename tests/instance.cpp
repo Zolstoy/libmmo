@@ -21,6 +21,9 @@
 
 #include "mmo/event.hpp"
 
+#include "common.hpp"
+
+
 using namespace boost;
 
 TEST(instance, case_01_construct_nominal)

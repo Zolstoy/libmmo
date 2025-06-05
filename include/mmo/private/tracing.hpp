@@ -6,12 +6,6 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 
-extern std::string const CA_CERT;
-extern std::string const CERT;
-extern std::string const KEY;
-
-extern std::string get_random_instance_path();
-
 namespace mmo {
 
 extern void init_traces();

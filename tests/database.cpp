@@ -4,6 +4,8 @@
 
 #include <gtest/gtest.h>
 
+#include "common.hpp"
+
 TEST(database, case_01_creation)
 {
     ASSERT_NO_THROW(mmo::database db(get_random_instance_path()));
