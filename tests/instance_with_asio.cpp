@@ -62,12 +62,3 @@ TEST(instance, run_async_nominal)
     ASSERT_EQ(mmo::error_code::instance_already_running,
               static_cast<mmo::error_code>(instance.run_async().error().index()));
 }
-
-int
-main(int argc, char **argv)
-{
-    mmo::init_traces();
-
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}

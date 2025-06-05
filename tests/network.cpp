@@ -141,12 +141,3 @@ TEST(network, case_04_auth)
     ws.write(asio::buffer(ss.str()));
     ASSERT_THROW(step1.get(), result::no_error);
 }
-
-int
-main(int argc, char **argv)
-{
-    mmo::init_traces();
-
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}
