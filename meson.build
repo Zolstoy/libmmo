@@ -16,7 +16,7 @@ endif
 
 boost_headers = dependency('boost')
 
-lib = library('mmo',
+mmo = library('mmo',
   [
     'src/database.cpp',
     'src/event.cpp',
@@ -32,63 +32,54 @@ lib = library('mmo',
     dependency('cereal'),
     dependency('libcurl'),
     dependency('openssl'),
-    dependency('openssl'),
     dependency('perlin_noise'),
-    dependency('spdlog'),
+    dependency('spdlog', default_options: '--default-library=static'),
     dependency('sqlitecpp'),
 ],
-  include_directories: include_directories('src/include', 'src/include/private'),
+  include_directories: include_directories('include/mmo', 'include/mmo/private'),
   cpp_args: common_cpp_args + '-DMMO_BUILDING_THE_LIB',
   override_options: override_args,
   install: true
 )
 
-lib_asio = library('mmo-asio',
-  src,
-  dependencies: dependencies,
-  include_directories: include_directories('src', 'src/include'),
-  cpp_args: common_cpp_args + '-DMMO_BUILDING_THE_LIB' + '-DMMO_WITH_ASIO',
-  override_options: override_args,
-)
-
 gtest = dependency('gtest')
 
 test_database = executable('test-database',
-  ['tests/database.cpp', 'src/common/common.cpp'],
+  'tests/database.cpp',
   dependencies: gtest,
-  include_directories: include_directories('src/include'),
+  include_directories: include_directories('include'),
   cpp_args: common_cpp_args,
   override_options: override_args,
-  link_with: lib
+  link_with: mmo
 )
 test('database', test_database, args : ['--gtest_color=yes'])
 
-test_instance_with_asio = executable('test-instance-with-asio',
-  ['tests/instance_with_asio.cpp', 'src/common/common.cpp'],
+test_instance = executable('test-instance-with-asio',
+  'tests/instance.cpp',
   dependencies: [gtest, boost_headers],
-  include_directories: include_directories('src/include'),
-  cpp_args: common_cpp_args + '-DMMO_WITH_ASIO',
+  include_directories: include_directories('include'),
+  cpp_args: common_cpp_args,
   override_options: override_args,
-  link_with: lib_asio
+  link_with: mmo
 )
-test('instance-with-asio', test_instance_with_asio, args : ['--gtest_color=yes'])
+test('instance-with-asio', test_instance, args : ['--gtest_color=yes'])
 
 test_network = executable('test-network',
-  ['tests/network.cpp', 'src/common/common.cpp'],
+  'tests/network.cpp',
   dependencies: [gtest, boost_headers],
-  include_directories: include_directories('src/include'),
-  cpp_args: common_cpp_args + '-DMMO_WITH_ASIO',
+  include_directories: include_directories('include'),
+  cpp_args: common_cpp_args,
   override_options: override_args,
-  link_with: lib_asio
+  link_with: mmo
 )
 test('network', test_network, args : ['--gtest_color=yes'])
 
 test_siege = executable('test-siege',
   'tests/siege.cpp',
   dependencies: [gtest, boost_headers],
-  include_directories: include_directories('src/include'),
-  cpp_args: common_cpp_args + '-DMMO_WITH_ASIO',
+  include_directories: include_directories('include'),
+  cpp_args: common_cpp_args,
   override_options: override_args,
-  link_with: lib_asio
+  link_with: mmo
 )
 test('siege', test_siege, args : ['--gtest_color=yes'])
