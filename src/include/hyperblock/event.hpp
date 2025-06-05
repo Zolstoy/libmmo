@@ -4,7 +4,7 @@
 
 #include <variant>
 
-namespace hyper_block {
+namespace mmo {
 
 namespace events {
 
@@ -17,12 +17,12 @@ struct handshake {
 struct upgrade {
     constexpr static int value = 2;
 };
-struct HYPERBLOCK_API read {
+struct MMO_API read {
     constexpr static int value = 3;
     char const*          message;
     read(char const* message);
 };
-struct HYPERBLOCK_API auth {
+struct MMO_API auth {
     constexpr static int value = 4;
     char const*          nickname;
     char const*          password;
@@ -34,4 +34,4 @@ struct HYPERBLOCK_API auth {
 using event = std::variant<events::accept, events::handshake, events::upgrade, events::read, events::auth>;
 using user_callback_proto = void(event&&);
 
-}   // namespace hyper_block
+}   // namespace mmo

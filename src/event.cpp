@@ -1,14 +1,14 @@
-#include "include/hyperblock/event.hpp"
+#include "include/mmo/event.hpp"
 
-namespace hyper_block {
+namespace mmo {
 namespace events {
 
-HYPERBLOCK_API
+MMO_API
 read::read(char const* message)
     : message(message)
 {}
 
-HYPERBLOCK_API
+MMO_API
 auth::auth(char const* nickname, char const* password)
     : nickname(nickname)
     , password(password)
@@ -16,4 +16,4 @@ auth::auth(char const* nickname, char const* password)
 
 }   // namespace events
 
-}   // namespace hyper_block
+}   // namespace mmo

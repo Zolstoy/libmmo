@@ -2,9 +2,9 @@
 
 #include "config.hpp"
 
-namespace hyper_block {
+namespace mmo {
 
-class HYPERBLOCK_API player
+class MMO_API player
 {
    private:
     float pos_x_;
@@ -18,4 +18,4 @@ class HYPERBLOCK_API player
     float get_pos_y() const;
 };
 
-}   // namespace hyper_block
+}   // namespace mmo

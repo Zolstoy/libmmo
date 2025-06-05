@@ -8,8 +8,8 @@
 #include <boost/asio/ssl/stream_base.hpp>
 #include <boost/beast.hpp>
 
-#include <hyperblock/instance.hpp>
-#include <hyperblock/protocol.hpp>
+#include <mmo/instance.hpp>
+#include <mmo/protocol.hpp>
 
 #include <cereal/archives/json.hpp>
 #include <fmt/color.h>
@@ -19,7 +19,7 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 
-#include "hyperblock/event.hpp"
+#include "mmo/event.hpp"
 
 #include "../common/common.hpp"
 
@@ -29,49 +29,44 @@ TEST(instance, case_01_construct_nominal)
 {
     asio::io_context ioc;
 
-    ASSERT_NO_THROW(hyper_block::instance(ioc, get_random_instance_path(), 0, CERT, KEY,
-                                          [](hyper_block::event &&) { return true; }));
+    ASSERT_NO_THROW(mmo::instance(ioc, get_random_instance_path(), 0, CERT, KEY, [](mmo::event &&) { return true; }));
 }
 
 TEST(instance, case_02_construct_fault)
 {
     asio::io_context ioc;
     {
-        hyper_block::instance instance(ioc, get_random_instance_path(), 2456, "", KEY,
-                                       [](hyper_block::event &&) { return true; });
+        mmo::instance instance(ioc, get_random_instance_path(), 2456, "", KEY, [](mmo::event &&) { return true; });
         ASSERT_FALSE(instance.run_async());
     }
     {
-        hyper_block::instance instance(ioc, get_random_instance_path(), 2456, CERT, "",
-                                       [](hyper_block::event &&) { return true; });
+        mmo::instance instance(ioc, get_random_instance_path(), 2456, CERT, "", [](mmo::event &&) { return true; });
         ASSERT_FALSE(instance.run_async());
     }
     {
-        hyper_block::instance instance(ioc, get_random_instance_path(), 2456, "", "",
-                                       [](hyper_block::event &&) { return true; });
+        mmo::instance instance(ioc, get_random_instance_path(), 2456, "", "", [](mmo::event &&) { return true; });
         ASSERT_FALSE(instance.run_async());
     }
 }
 
 TEST(instance, run_async_nominal)
 {
-    asio::io_context      ioc;
-    hyper_block::instance instance(ioc, get_random_instance_path(), 2456, CERT, KEY,
-                                   [](hyper_block::event &&) { return true; });
-    auto                  result = instance.run_async();
+    asio::io_context ioc;
+    mmo::instance    instance(ioc, get_random_instance_path(), 2456, CERT, KEY, [](mmo::event &&) { return true; });
+    auto             result = instance.run_async();
     if (!result)
     {
         std::println("==>{}", result.error().index());
     }
     ASSERT_TRUE(result);
-    ASSERT_EQ(hyper_block::error_code::instance_already_running,
-              static_cast<hyper_block::error_code>(instance.run_async().error().index()));
+    ASSERT_EQ(mmo::error_code::instance_already_running,
+              static_cast<mmo::error_code>(instance.run_async().error().index()));
 }
 
 int
 main(int argc, char **argv)
 {
-    hyper_block::init_traces();
+    mmo::init_traces();
 
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

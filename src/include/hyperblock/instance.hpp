@@ -4,7 +4,7 @@
 #include <functional>
 #include <string>
 
-#ifdef HYPERBLOCK_WITH_ASIO
+#ifdef MMO_WITH_ASIO
  #include <boost/asio.hpp>
  #include <boost/asio/io_context.hpp>
  #include <boost/asio/ssl.hpp>
@@ -16,9 +16,9 @@
 #include "error.hpp"
 #include "event.hpp"
 
-namespace hyper_block {
+namespace mmo {
 
-class HYPERBLOCK_API instance
+class MMO_API instance
 {
    public:
     friend struct inner;
@@ -31,7 +31,7 @@ class HYPERBLOCK_API instance
     database database_;
 
    public:
-#ifdef HYPERBLOCK_WITH_ASIO
+#ifdef MMO_WITH_ASIO
     instance(boost::asio::io_context& io_context, std::string const& world_name, short port,
              std::string const& cert_pem, std::string const& key_pem,
              std::function<user_callback_proto>&& step_callback) noexcept;
@@ -41,7 +41,7 @@ class HYPERBLOCK_API instance
 #endif
 
    public:
-#ifdef HYPERBLOCK_WITH_ASIO
+#ifdef MMO_WITH_ASIO
     std::expected<short, error> run_async() noexcept;
 #else
    private:
@@ -55,4 +55,4 @@ class HYPERBLOCK_API instance
     void do_accept();
 };
 
-}   // namespace hyper_block
+}   // namespace mmo

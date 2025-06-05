@@ -1,6 +1,6 @@
 #pragma once
 
-namespace hyper_block {
+namespace mmo {
 
 template <typename T>
 concept Game = requires {
@@ -9,4 +9,4 @@ concept Game = requires {
     };
 };
 
-}   // namespace hyper_block
+}   // namespace mmo

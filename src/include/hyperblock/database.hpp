@@ -7,9 +7,9 @@
 #include "error.hpp"
 #include "player.hpp"
 
-namespace hyper_block {
+namespace mmo {
 
-class HYPERBLOCK_API database
+class MMO_API database
 {
    private:
     void* inner_;
@@ -26,4 +26,4 @@ class HYPERBLOCK_API database
     void set_init_position(float pos_x, float pos_y);
 };
 
-}   // namespace hyper_block
+}   // namespace mmo

@@ -6,9 +6,9 @@
 #include <curl/curl.h>
 #include <curl/easy.h>
 
-#include "../include/hyperblock/utils.hpp"
+#include "../include/mmo/utils.hpp"
 
-namespace hyper_block {
+namespace mmo {
 
 struct upload_status {
     size_t bytes_read;
@@ -97,4 +97,4 @@ send_email(std::string const &from_email, std::string const &to_email, std::stri
     return (int) res;
 }
 
-}   // namespace hyper_block
+}   // namespace mmo

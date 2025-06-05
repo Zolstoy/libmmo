@@ -1,4 +1,4 @@
-project('hyper-block', 'cpp', version : '0.1.0', meson_version : '>=1.0.0')
+project('libmmo', 'cpp', version : '0.1.0', meson_version : '>=1.0.0')
 
 if host_machine.system() == 'windows'
  override_args = ['cpp_std=vc++latest']
@@ -10,7 +10,7 @@ endif
 
 
 if get_option('default_library') == 'static'
-  common_cpp_args += ['-DHYPERBLOCK_STATIC']
+  common_cpp_args += ['-DMMO_STATIC']
 else
   common_cpp_args += '-DBOOST_ALL_DYN_LINK'
 endif
@@ -22,6 +22,7 @@ spdlog = dependency('spdlog', default_options: '--default-library=static')
 sqlite = dependency('sqlitecpp')
 perlin_noise = dependency('perlin_noise')
 curl = dependency('libcurl')
+openssl = dependency('openssl')
 
 dependencies = [
   boost_headers,
@@ -30,7 +31,8 @@ dependencies = [
   spdlog,
   sqlite,
   perlin_noise,
-  curl
+  curl,
+  openssl
 ]
 
 gtest = dependency('gtest', default_options: '--default-library=static')
@@ -46,20 +48,20 @@ src = [
   'src/utils/http.cpp'
 ]
 
-lib = library('hyperblock',
+lib = library('mmo',
   src,
   dependencies: dependencies,
   include_directories: include_directories('src', 'src/include'),
-  cpp_args: common_cpp_args + '-DHYPERBLOCK_BUILDING_THE_LIB',
+  cpp_args: common_cpp_args + '-DMMO_BUILDING_THE_LIB',
   override_options: override_args,
   install: true
 )
 
-lib_asio = library('hyperblock-asio',
+lib_asio = library('mmo-asio',
   src,
   dependencies: dependencies,
   include_directories: include_directories('src', 'src/include'),
-  cpp_args: common_cpp_args + '-DHYPERBLOCK_BUILDING_THE_LIB' + '-DHYPERBLOCK_WITH_ASIO',
+  cpp_args: common_cpp_args + '-DMMO_BUILDING_THE_LIB' + '-DMMO_WITH_ASIO',
   override_options: override_args,
   install: true
 )
@@ -78,7 +80,7 @@ test_instance_with_asio = executable('test-instance-with-asio',
   ['src/tests/instance_with_asio.cpp', 'src/common/common.cpp'],
   dependencies: [gtest, spdlog, boost_headers, openssl, cereal],
   include_directories: include_directories('src/include'),
-  cpp_args: common_cpp_args + '-DHYPERBLOCK_WITH_ASIO',
+  cpp_args: common_cpp_args + '-DMMO_WITH_ASIO',
   override_options: override_args,
   link_with: lib_asio
 )
@@ -88,7 +90,7 @@ test_network = executable('test-network',
   ['src/tests/network.cpp', 'src/common/common.cpp'],
   dependencies: [gtest, spdlog, boost_headers, openssl, cereal],
   include_directories: include_directories('src/include'),
-  cpp_args: common_cpp_args + '-DHYPERBLOCK_WITH_ASIO',
+  cpp_args: common_cpp_args + '-DMMO_WITH_ASIO',
   override_options: override_args,
   link_with: lib_asio
 )
@@ -98,7 +100,7 @@ test_siege = executable('test-siege',
   ['src/tests/siege.cpp', 'src/common/common.cpp'],
   dependencies: [gtest, gtest_main, spdlog, boost_headers, openssl],
   include_directories: include_directories('src/include'),
-  cpp_args: common_cpp_args + '-DHYPERBLOCK_WITH_ASIO',
+  cpp_args: common_cpp_args + '-DMMO_WITH_ASIO',
   override_options: override_args,
   link_with: lib_asio
 )

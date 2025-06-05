@@ -1,6 +1,6 @@
-#include "include/hyperblock/player.hpp"
+#include "include/mmo/player.hpp"
 
-namespace hyper_block {
+namespace mmo {
 
 player::player(float pos_x, float pos_y)
     : pos_x_(pos_x)
@@ -19,4 +19,4 @@ player::get_pos_y() const
     return pos_y_;
 }
 
-}   // namespace hyper_block
+}   // namespace mmo

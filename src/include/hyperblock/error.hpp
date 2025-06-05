@@ -3,7 +3,7 @@
 #include <string>
 #include <variant>
 
-namespace hyper_block {
+namespace mmo {
 
 enum class error_code
 {
@@ -41,4 +41,4 @@ struct acceptor_failed {
 using error = std::variant<error_not_implemented, invalid_certificate, invalid_private_key, instance_already_running,
                            acceptor_failed>;
 
-}   // namespace hyper_block
+}   // namespace mmo

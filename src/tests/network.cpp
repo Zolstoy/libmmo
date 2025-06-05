@@ -7,8 +7,8 @@
 #include <boost/asio/ssl/stream_base.hpp>
 #include <boost/beast.hpp>
 
-#include <hyperblock/instance.hpp>
-#include <hyperblock/protocol.hpp>
+#include <mmo/instance.hpp>
+#include <mmo/protocol.hpp>
 
 #include <cereal/archives/json.hpp>
 #include <fmt/color.h>
@@ -18,7 +18,7 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 
-#include "hyperblock/event.hpp"
+#include "mmo/event.hpp"
 
 #include "../common/common.hpp"
 
@@ -35,24 +35,24 @@ struct result {
     };
 };
 
-#define HYPERBLOCK_TESTS_PRELUDE(code)                                                                \
-    asio::io_context      ioc_server;                                                                 \
-    hyper_block::instance instance(ioc_server, get_random_instance_path(), 2456, CERT, KEY,           \
-                                   [](hyper_block::event &&event) -> void code);                      \
-    auto                  port  = instance.run_async().value();                                       \
-    auto                  step1 = std::async(std::launch::async, [&]() { return ioc_server.run(); }); \
-    asio::io_context      ioc_client;                                                                 \
-    asio::ssl::context    ssl_context(asio::ssl::context::sslv23);                                    \
-    ssl_context.set_verify_mode(asio::ssl::verify_none);                                              \
-    ssl_context.add_certificate_authority(asio::buffer(CA_CERT.data(), CA_CERT.size()));              \
-    asio::ip::tcp::resolver                  resolver(ioc_client);                                    \
-    asio::ip::tcp::resolver::results_type    endpoints = resolver.resolve("localhost", "2456");       \
+#define MMO_TESTS_PRELUDE(code)                                                                    \
+    asio::io_context   ioc_server;                                                                 \
+    mmo::instance      instance(ioc_server, get_random_instance_path(), 2456, CERT, KEY,           \
+                                [](mmo::event &&event) -> void code);                              \
+    auto               port  = instance.run_async().value();                                       \
+    auto               step1 = std::async(std::launch::async, [&]() { return ioc_server.run(); }); \
+    asio::io_context   ioc_client;                                                                 \
+    asio::ssl::context ssl_context(asio::ssl::context::sslv23);                                    \
+    ssl_context.set_verify_mode(asio::ssl::verify_none);                                           \
+    ssl_context.add_certificate_authority(asio::buffer(CA_CERT.data(), CA_CERT.size()));           \
+    asio::ip::tcp::resolver                  resolver(ioc_client);                                 \
+    asio::ip::tcp::resolver::results_type    endpoints = resolver.resolve("localhost", "2456");    \
     asio::ssl::stream<asio::ip::tcp::socket> socket(ioc_client, ssl_context)
 
 TEST(network, case_01_accept)
 {
-    HYPERBLOCK_TESTS_PRELUDE({
-        if (event.index() != hyper_block::events::accept::value)
+    MMO_TESTS_PRELUDE({
+        if (event.index() != mmo::events::accept::value)
             throw result::bad_event_type{};
         throw result::no_error{};
     });
@@ -63,10 +63,10 @@ TEST(network, case_01_accept)
 
 TEST(network, case_02_handshake)
 {
-    HYPERBLOCK_TESTS_PRELUDE({
-        if (event.index() == hyper_block::events::accept::value)
+    MMO_TESTS_PRELUDE({
+        if (event.index() == mmo::events::accept::value)
             return;
-        if (event.index() != hyper_block::events::handshake::value)
+        if (event.index() != mmo::events::handshake::value)
             throw result::bad_event_type{};
         throw result::no_error{};
     });
@@ -78,12 +78,12 @@ TEST(network, case_02_handshake)
 
 TEST(network, case_03_upgrade)
 {
-    HYPERBLOCK_TESTS_PRELUDE({
-        if (event.index() == hyper_block::events::accept::value)
+    MMO_TESTS_PRELUDE({
+        if (event.index() == mmo::events::accept::value)
             return;
-        if (event.index() == hyper_block::events::handshake::value)
+        if (event.index() == mmo::events::handshake::value)
             return;
-        if (event.index() != hyper_block::events::upgrade::value)
+        if (event.index() != mmo::events::upgrade::value)
             throw result::bad_event_type{};
         throw result::no_error{};
     });
@@ -98,19 +98,19 @@ TEST(network, case_03_upgrade)
 
 TEST(network, case_04_auth)
 {
-    HYPERBLOCK_TESTS_PRELUDE({
-        if (event.index() == hyper_block::events::accept::value)
+    MMO_TESTS_PRELUDE({
+        if (event.index() == mmo::events::accept::value)
             return;
-        if (event.index() == hyper_block::events::handshake::value)
+        if (event.index() == mmo::events::handshake::value)
             return;
-        if (event.index() == hyper_block::events::upgrade::value)
+        if (event.index() == mmo::events::upgrade::value)
             return;
-        if (event.index() == hyper_block::events::read::value)
+        if (event.index() == mmo::events::read::value)
             return;
-        if (event.index() != hyper_block::events::auth::value)
+        if (event.index() != mmo::events::auth::value)
             throw result::bad_event_type{};
 
-        auto auth_event = std::get<hyper_block::events::auth>(event);
+        auto auth_event = std::get<mmo::events::auth>(event);
 
         if (std::string(auth_event.nickname) != "nick123")
             throw result::nickname_dont_match{};
@@ -126,7 +126,7 @@ TEST(network, case_04_auth)
 
     ws.handshake("localhost", "/");
 
-    hyper_block::protocol::authentication auth;
+    mmo::protocol::authentication auth;
 
     auth.nickname = "nick123";
     auth.password = "pass123";
@@ -145,7 +145,7 @@ TEST(network, case_04_auth)
 int
 main(int argc, char **argv)
 {
-    hyper_block::init_traces();
+    mmo::init_traces();
 
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

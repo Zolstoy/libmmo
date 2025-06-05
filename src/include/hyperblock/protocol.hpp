@@ -2,7 +2,7 @@
 
 #include <string>
 
-namespace hyper_block {
+namespace mmo {
 namespace protocol {
 
 struct next_message {
@@ -29,4 +29,4 @@ struct authentication {
 };
 
 }   // namespace protocol
-}   // namespace hyper_block
+}   // namespace mmo

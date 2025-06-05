@@ -49,11 +49,11 @@ IncludeCategories:
     Priority:        1
   - Regex:           '^<boost/.+>$'
     Priority:        2
-  - Regex:           '^<hyperblock/.*\.hpp>$'
+  - Regex:           '^<mmo/.*\.hpp>$'
     Priority:        3
   - Regex:           '^<[^/]+/.+>$'
     Priority:        4
-  - Regex:           '^"(.+/)?hyperblock/.*\.hpp"$'
+  - Regex:           '^"(.+/)?mmo/.*\.hpp"$'
     Priority:        5
   - Regex:           '^".*"$'
     Priority:        6

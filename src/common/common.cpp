@@ -89,15 +89,15 @@ std::string const KEY =
     "RZb6vjD6zPWZElSkrwGczDM=\n"
     "-----END PRIVATE KEY-----";
 
-namespace hyper_block {
+namespace mmo {
 
 void
 init_traces()
 {
     auto formatter = std::make_unique<spdlog::pattern_formatter>();
     auto now       = std::chrono::steady_clock::now();
-    formatter->add_flag<hyper_block::elapsed_formatter_flag>('*', now);
-    formatter->add_flag<hyper_block::thread_formatter_flag>('+');
+    formatter->add_flag<mmo::elapsed_formatter_flag>('*', now);
+    formatter->add_flag<mmo::thread_formatter_flag>('+');
     formatter->set_pattern("[%*][%+] %v");
     auto logger = spdlog::stdout_color_mt("console", spdlog::color_mode::always);
     logger->set_level(spdlog::level::trace);
@@ -106,4 +106,4 @@ init_traces()
     spdlog::set_default_logger(logger);
 }
 
-}   // namespace hyper_block
+}   // namespace mmo

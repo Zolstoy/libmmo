@@ -14,9 +14,9 @@
 #include <openssl/sha.h>
 #include <spdlog/spdlog.h>
 
-#include "../include/hyperblock/utils.hpp"
+#include "../include/mmo/utils.hpp"
 
-namespace hyper_block {
+namespace mmo {
 
 std::string
 sha256(const std::string& str)
@@ -45,4 +45,4 @@ uuid()
     return boost::uuids::to_string(boost::uuids::random_generator()());
 }
 
-}   // namespace hyper_block
+}   // namespace mmo

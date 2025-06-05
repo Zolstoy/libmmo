@@ -1,4 +1,4 @@
-#include "include/hyperblock/instance.hpp"
+#include "include/mmo/instance.hpp"
 
 #include <expected>
 #include <string>
@@ -13,22 +13,21 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 
-#include "include/hyperblock/database.hpp"
-#include "include/hyperblock/error.hpp"
-#include "include/hyperblock/event.hpp"
+#include "include/mmo/database.hpp"
+#include "include/mmo/error.hpp"
+#include "include/mmo/event.hpp"
 
 #include "session.hpp"
-
 
 using namespace boost;
 
 #define _INSTANCE_LOG(level, fmt, ...) \
     spdlog::level("[\033[38;2;0;210;120m{:15}\033[39;49m]" fmt, "server", __VA_ARGS__)
 
-namespace hyper_block {
+namespace mmo {
 
 struct inner {
-#ifdef HYPERBLOCK_WITH_ASIO
+#ifdef MMO_WITH_ASIO
     boost::asio::io_context& io_context;
 #else
     boost::asio::io_context io_context;
@@ -41,7 +40,7 @@ struct inner {
     std::string                                     key_pem;
     std::function<user_callback_proto>              user_callback;
 
-#ifdef HYPERBLOCK_WITH_ASIO
+#ifdef MMO_WITH_ASIO
     inner(boost::asio::io_context& io_context, std::string const& cert_pem, std::string const& key_pem,
           std::function<user_callback_proto>&& user_callback)
         : io_context(io_context)
@@ -76,7 +75,7 @@ struct inner {
     }
 };
 
-#ifdef HYPERBLOCK_WITH_ASIO
+#ifdef MMO_WITH_ASIO
 instance::instance(asio::io_context& io_context, std::string const& world_name, short port, std::string const& cert_pem,
                    std::string const& key_pem, std::function<user_callback_proto>&& step_callback) noexcept
     : inner_(reinterpret_cast<void*>(new inner(io_context, cert_pem, key_pem, std::move(step_callback))))
@@ -94,8 +93,8 @@ instance::instance(std::string const& world_name, short port, std::string const&
 {}
 #endif
 
-HYPERBLOCK_API std::expected<short, error>
-               instance::run_async() noexcept
+MMO_API std::expected<short, error>
+        instance::run_async() noexcept
 {
     auto inner_data = reinterpret_cast<inner*>(inner_);
     if (is_running_)
@@ -132,7 +131,7 @@ HYPERBLOCK_API std::expected<short, error>
     return 0;
 }
 
-#if !defined(HYPERBLOCK_WITH_ASIO)
+#if !defined(MMO_WITH_ASIO)
 std::expected<std::tuple<>, error>
 instance::run() noexcept
 {
@@ -171,4 +170,4 @@ instance::do_accept()
     _INSTANCE_LOG(trace, "server: listenning on {}", port_);
 }
 
-}   // namespace hyper_block
+}   // namespace mmo

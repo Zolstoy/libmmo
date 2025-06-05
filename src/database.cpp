@@ -1,4 +1,4 @@
-#include "include/hyperblock/database.hpp"
+#include "include/mmo/database.hpp"
 
 #include <exception>
 #include <expected>
@@ -17,11 +17,11 @@
 #include <openssl/sha.h>
 #include <spdlog/spdlog.h>
 
-#include "include/hyperblock/error.hpp"
-#include "include/hyperblock/player.hpp"
-#include "include/hyperblock/utils.hpp"
+#include "include/mmo/error.hpp"
+#include "include/mmo/player.hpp"
+#include "include/mmo/utils.hpp"
 
-namespace hyper_block {
+namespace mmo {
 
 struct inner {
     SQLite::Database sql_db;
@@ -150,4 +150,4 @@ database::set_init_position(float pos_x, float pos_y)
     init_pos_y_ = pos_y;
 }
 
-}   // namespace hyper_block
+}   // namespace mmo

@@ -12,7 +12,7 @@ extern std::string const KEY;
 
 extern std::string get_random_instance_path();
 
-namespace hyper_block {
+namespace mmo {
 
 extern void init_traces();
 
@@ -59,4 +59,4 @@ class thread_formatter_flag : public spdlog::custom_flag_formatter
     }
 };
 
-}   // namespace hyper_block
+}   // namespace mmo

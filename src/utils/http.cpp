@@ -6,11 +6,11 @@
 
 #include <spdlog/spdlog.h>
 
-#include "../include/hyperblock/utils.hpp"
+#include "../include/mmo/utils.hpp"
 
 using namespace boost;
 
-namespace hyper_block {
+namespace mmo {
 
 void
 do_session(asio::ip::tcp::socket socket)
@@ -83,4 +83,4 @@ run_validation_service(unsigned short port)
     }
 }
 
-}   // namespace hyper_block
+}   // namespace mmo

@@ -19,14 +19,13 @@
 #include <cereal/archives/json.hpp>
 #include <spdlog/spdlog.h>
 
-#include "include/hyperblock/event.hpp"
-#include "include/hyperblock/protocol.hpp"
-
+#include "include/mmo/event.hpp"
+#include "include/mmo/protocol.hpp"
 
 #define _SESSION_LOG(level, fmt, ...) \
     spdlog::level("[\033[38;2;0;210;120m{:15}\033[39;49m]" fmt, client_endpoint_.address().to_string(), __VA_ARGS__)
 
-namespace hyper_block {
+namespace mmo {
 
 template <bool Tls = true>
 class session : public std::enable_shared_from_this<session<Tls>>
@@ -120,7 +119,7 @@ class session : public std::enable_shared_from_this<session<Tls>>
 
         step_callback_(events::read{message.data()});
 
-        hyper_block::protocol::authentication auth;
+        mmo::protocol::authentication auth;
 
         try
         {
@@ -145,4 +144,4 @@ class session : public std::enable_shared_from_this<session<Tls>>
 using tls_session   = session<true>;
 using plain_session = session<false>;
 
-}   // namespace hyper_block
+}   // namespace mmo
