@@ -1,4 +1,5 @@
 #include <expected>
+#include <future>
 
 #include <boost/asio.hpp>
 #include <boost/asio/io_context.hpp>
@@ -32,25 +33,36 @@ struct result {
 };
 
 struct network_test : public testing::Test {
-    asio::ssl::context ssl_context;
+    asio::ssl::context      ssl_context;
+    asio::io_context        ioc;
+    asio::ip::tcp::resolver resolver;
 
     network_test()
         : ssl_context(asio::ssl::context::sslv23)
+        , resolver(ioc)
     {
         ssl_context.set_verify_mode(asio::ssl::verify_none);
         ssl_context.add_certificate_authority(asio::buffer(CA_CERT.data(), CA_CERT.size()));
+
+        asio::ip::tcp::resolver::results_type endpoints = resolver.resolve("localhost", "2456");
+    }
+
+    mmo::instance get_instance(std::function<mmo::user_callback_proto> &&func) const
+    {
+        return mmo::instance(get_random_instance_path(), 2456, CERT, KEY, std::move(func));
+    }
+
+    asio::ssl::stream<asio::ip::tcp::socket> get_socket()
+    {
+        return asio::ssl::stream<asio::ip::tcp::socket>(ioc, ssl_context);
     }
 };
 
 TEST_F(network_test, case_01_accept)
 {
-    mmo::instance instance(get_random_instance_path(), 2456, CERT, KEY, [](mmo::event &&event) -> void {});
-    auto          step1 = std::async([&] { return instance.run(); });
+    auto instance      = get_instance([](mmo::event &&event) -> void {});
+    auto future_result = std::async([i = std::move(instance)] mutable { return i.run(); });
+    auto client_socket = get_socket();
 
-    asio::io_context ioc;
-
-    asio::ip::tcp::resolver                  resolver(ioc);
-    asio::ip::tcp::resolver::results_type    endpoints = resolver.resolve("localhost", "2456");
-    asio::ssl::stream<asio::ip::tcp::socket> socket(ioc, get_ssl_context());
-    ASSERT_THROW(step1.get(), result::no_error);
+    ASSERT_THROW(future_result.get(), result::no_error);
 }
