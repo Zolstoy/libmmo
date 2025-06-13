@@ -4,6 +4,7 @@
 #include <boost/asio.hpp>
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/ssl.hpp>
+#include <boost/asio/ssl/context.hpp>
 #include <boost/asio/ssl/stream.hpp>
 #include <boost/asio/ssl/stream_base.hpp>
 #include <boost/beast.hpp>
@@ -16,7 +17,6 @@
 
 #include "mmo/event.hpp"
 
-#include "boost/asio/ssl/context.hpp"
 #include "common.hpp"
 
 using namespace boost;
@@ -60,9 +60,15 @@ struct network_test : public testing::Test {
 
 TEST_F(network_test, case_01_accept)
 {
-    auto instance      = get_instance([](mmo::event &&event) -> void {});
+    auto instance      = get_instance([](mmo::event &&event) -> void {
+        if (event.index() != mmo::events::accept::value)
+            throw result::bad_event_type{};
+        throw result::no_error{};
+    });
     auto future_result = std::async([i = std::move(instance)] mutable { return i.run(); });
     auto client_socket = get_socket();
 
-    ASSERT_THROW(future_result.get(), result::no_error);
+    std::expected<std::tuple<>, mmo::error> err;
+
+    ASSERT_THROW(err = future_result.get(), result::no_error);
 }

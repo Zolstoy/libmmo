@@ -1,6 +1,7 @@
 #include "instance.hpp"
 
 #include <expected>
+#include <future>
 #include <stdarg.h>
 #include <string>
 
@@ -110,28 +111,37 @@ instance::run_async() noexcept
 std::expected<std::tuple<>, error>
 instance::run() noexcept
 {
-    std::vector<std::thread> threads;
-    asio::io_context         ioc;
+    // std::vector<std::jthread> threads;
+    std::vector<std::future<void>> futs;
+    // asio::io_context               ioc;
 
-    auto result = run_async();
-
+    auto result     = run_async();
+    auto inner_data = reinterpret_cast<inner*>(inner_);
     if (!result)
         return std::unexpected(result.error());
     for (int i = 0; i < std::thread::hardware_concurrency(); ++i)
     {
-        threads.emplace_back([&] {
-            try
-            {
-                ioc.run();
-            } catch (std::exception& e)
-            {
-                std::println(std::cerr, "{}", e.what());
-            }
+        auto fut = std::async([&] {
+            spdlog::info("Running...");
+            inner_data->io_context.run();
+            spdlog::info("Stopped");
         });
+        futs.emplace_back(std::move(fut));
+        // threads.emplace_back([&] {
+        //     try
+        //     {
+        //         ioc.run();
+        //     } catch (std::exception& e)
+        //     {
+        //         std::println(std::cerr, "{}", e.what());
+        //     }
+        // });
     }
 
-    for (auto& t : threads)
-        t.join();
+    for (auto& f : futs)
+        f.get();
+    // for (auto& t : threads)
+    //     t.join();
     return std::tuple<>();
 }
 
