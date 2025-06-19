@@ -1,5 +1,6 @@
 #include <expected>
 #include <future>
+#include <print>
 
 #include <boost/asio.hpp>
 #include <boost/asio/io_context.hpp>
@@ -9,8 +10,10 @@
 #include <boost/asio/ssl/stream_base.hpp>
 #include <boost/beast.hpp>
 
+#include <mmo/error.hpp>
 #include <mmo/instance.hpp>
 #include <mmo/protocol.hpp>
+#include <mmo/tracing.hpp>
 
 #include <cereal/archives/json.hpp>
 #include <gtest/gtest.h>
@@ -21,16 +24,16 @@
 
 using namespace boost;
 
-struct result {
-    struct no_error {
-    };
-    struct bad_event_type {
-    };
-    struct nickname_dont_match {
-    };
-    struct password_dont_match {
-    };
-};
+// struct result {
+//     struct no_error {
+//     };
+//     struct bad_event_type {
+//     };
+//     struct nickname_dont_match {
+//     };
+//     struct password_dont_match {
+//     };
+// };
 
 struct network_test : public testing::Test {
     asio::ssl::context      ssl_context;
@@ -45,6 +48,7 @@ struct network_test : public testing::Test {
         ssl_context.add_certificate_authority(asio::buffer(CA_CERT.data(), CA_CERT.size()));
 
         asio::ip::tcp::resolver::results_type endpoints = resolver.resolve("localhost", "2456");
+        mmo::init_traces();
     }
 
     mmo::instance get_instance(std::function<mmo::user_callback_proto> &&func) const
@@ -60,15 +64,22 @@ struct network_test : public testing::Test {
 
 TEST_F(network_test, case_01_accept)
 {
-    auto instance      = get_instance([](mmo::event &&event) -> void {
-        if (event.index() != mmo::events::accept::value)
-            throw result::bad_event_type{};
-        throw result::no_error{};
-    });
+    std::println("[test] Getting instance...");
+    auto instance = get_instance([](mmo::event &&event) -> void { throw std::runtime_error("from tests 123"); });
+    std::println("[test] Launching instance...");
     auto future_result = std::async([i = std::move(instance)] mutable { return i.run(); });
+    std::println("[test] Getting socket...");
     auto client_socket = get_socket();
 
-    std::expected<std::tuple<>, mmo::error> err;
+    // asio::ip::tcp::resolver resolver(this->ioc);
+    // auto                    results = resolver.resolve("localhost", "2456");
 
-    ASSERT_THROW(err = future_result.get(), result::no_error);
+    std::println("[test] Connecting...");
+    client_socket.next_layer().connect(asio::ip::tcp::endpoint(asio::ip::tcp::v4(), 2456));
+    std::println("[test] Handshaking...");
+    client_socket.handshake(boost::asio::ssl::stream_base::client);
+
+    auto result = future_result.get();
+    ASSERT_FALSE(result.has_value());
+    ASSERT_EQ(static_cast<size_t>(mmo::error_code::error_not_implemented), result.error().index());
 }

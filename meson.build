@@ -79,7 +79,7 @@ test_network = executable('test-network',
     'tests/network.cpp',
   ],
   dependencies: [gtest, gtest_main, boost_headers, openssl, cereal],
-  include_directories: include_directories('include'),
+  include_directories: include_directories('include', 'src'),
   cpp_args: common_cpp_args,
   override_options: override_args,
   link_with: mmo

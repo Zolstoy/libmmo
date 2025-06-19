@@ -11,7 +11,7 @@ enum class error_code
     invalid_certificate,
     invalid_private_key,
     instance_already_running,
-    acceptor_failed
+    acceptor_failed,
 };
 
 struct error_not_implemented {

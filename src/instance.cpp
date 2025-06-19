@@ -111,20 +111,28 @@ instance::run_async() noexcept
 std::expected<std::tuple<>, error>
 instance::run() noexcept
 {
-    // std::vector<std::jthread> threads;
-    std::vector<std::future<void>> futs;
-    // asio::io_context               ioc;
+    std::vector<std::jthread> threads;
 
-    auto result     = run_async();
-    auto inner_data = reinterpret_cast<inner*>(inner_);
+    auto        result = run_async();
+    std::string error_message;
+    auto        inner_data = reinterpret_cast<inner*>(inner_);
     if (!result)
         return std::unexpected(result.error());
     for (int i = 0; i < std::thread::hardware_concurrency(); ++i)
     {
-        auto fut = std::async([&] {
-            spdlog::info("Running...");
-            inner_data->io_context.run();
-            spdlog::info("Stopped");
+        threads.emplace_back([&] {
+            try
+            {
+                _INSTANCE_LOG(info, "Starting one thread...");
+                inner_data->io_context.run();
+            } catch (std::exception& e)
+            {
+                error_message = e.what();
+                _INSTANCE_LOG(error, "One thread throwed an error, stopping all threads...");
+                inner_data->io_context.stop();
+                return;
+            }
+            _INSTANCE_LOG(info, "One thread stopped gracefully");
         });
         futs.emplace_back(std::move(fut));
         // threads.emplace_back([&] {
@@ -138,10 +146,10 @@ instance::run() noexcept
         // });
     }
 
-    for (auto& f : futs)
-        f.get();
-    // for (auto& t : threads)
-    //     t.join();
+    for (auto& t : threads)
+        t.join();
+    if (!error_message.empty())
+        return std::unexpected(error_not_implemented{});
     return std::tuple<>();
 }
 
