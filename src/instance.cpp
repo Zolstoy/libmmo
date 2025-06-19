@@ -1,7 +1,6 @@
 #include "instance.hpp"
 
 #include <expected>
-#include <future>
 #include <stdarg.h>
 #include <string>
 
@@ -85,7 +84,7 @@ instance::run_async() noexcept
         inner_data->acceptor->bind(boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), port_));
         inner_data->acceptor->listen();
 
-        inner_data->ssl_context = std::make_shared<boost::asio::ssl::context>(boost::asio::ssl::context::sslv23);
+        inner_data->ssl_context = std::make_shared<boost::asio::ssl::context>(boost::asio::ssl::context::sslv23_server);
         inner_data->ssl_context->set_options(boost::asio::ssl::context::default_workarounds);
     } catch (...)
     {
@@ -111,45 +110,12 @@ instance::run_async() noexcept
 std::expected<std::tuple<>, error>
 instance::run() noexcept
 {
-    std::vector<std::jthread> threads;
-
-    auto        result = run_async();
-    std::string error_message;
-    auto        inner_data = reinterpret_cast<inner*>(inner_);
+    auto inner_data = reinterpret_cast<inner*>(inner_);
+    auto result     = run_async();
     if (!result)
         return std::unexpected(result.error());
-    for (int i = 0; i < std::thread::hardware_concurrency(); ++i)
-    {
-        threads.emplace_back([&] {
-            try
-            {
-                _INSTANCE_LOG(info, "Starting one thread...");
-                inner_data->io_context.run();
-            } catch (std::exception& e)
-            {
-                error_message = e.what();
-                _INSTANCE_LOG(error, "One thread throwed an error, stopping all threads...");
-                inner_data->io_context.stop();
-                return;
-            }
-            _INSTANCE_LOG(info, "One thread stopped gracefully");
-        });
-        futs.emplace_back(std::move(fut));
-        // threads.emplace_back([&] {
-        //     try
-        //     {
-        //         ioc.run();
-        //     } catch (std::exception& e)
-        //     {
-        //         std::println(std::cerr, "{}", e.what());
-        //     }
-        // });
-    }
 
-    for (auto& t : threads)
-        t.join();
-    if (!error_message.empty())
-        return std::unexpected(error_not_implemented{});
+    inner_data->io_context.run();
     return std::tuple<>();
 }
 

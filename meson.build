@@ -17,6 +17,7 @@ endif
 boost_headers = dependency('boost')
 cereal = dependency('cereal')
 openssl = dependency('openssl')
+spdlog = dependency('spdlog', default_options: ['default_library=static'])
 
 mmo = library('mmo',
   [
@@ -35,7 +36,7 @@ mmo = library('mmo',
     dependency('libcurl'),
     openssl,
     dependency('perlin_noise'),
-    dependency('spdlog', default_options: ['default_library=static']),
+    spdlog,
     dependency('sqlitecpp', default_options: ['default_library=static']),
 ],
   include_directories: include_directories('include/mmo', 'src'),
@@ -78,7 +79,7 @@ test_network = executable('test-network',
     'tests/common.cpp',
     'tests/network.cpp',
   ],
-  dependencies: [gtest, gtest_main, boost_headers, openssl, cereal],
+  dependencies: [gtest, boost_headers, openssl, cereal, spdlog],
   include_directories: include_directories('include', 'src'),
   cpp_args: common_cpp_args,
   override_options: override_args,
