@@ -74,6 +74,16 @@ database::database(std::string const& world_name)
     }
 }
 
+database::~database()
+{
+    auto inner_data = reinterpret_cast<inner*>(inner_);
+    if (inner_data)
+    {
+        delete inner_data;
+        inner_ = nullptr;
+    }
+}
+
 std::expected<std::tuple<>, error>
 database::save_user(std::string const& nickname, std::string const& password)
 {

@@ -62,15 +62,35 @@ struct inner {
 };
 
 instance::instance(std::string const& world_name, short port, std::string const& cert_pem, std::string const& key_pem,
-                   std::function<user_callback_proto>&& step_callback) noexcept
+                   std::function<user_callback_proto>&& step_callback)
     : inner_(reinterpret_cast<void*>(new inner(cert_pem, key_pem, std::move(step_callback))))
     , port_(port)
     , is_running_(false)
     , database_(world_name)
 {}
 
+instance::~instance()
+{
+    is_running_     = false;
+    auto inner_data = reinterpret_cast<inner*>(inner_);
+    if (inner_data)
+    {
+        inner_data->io_context.stop();
+        if (inner_data->acceptor)
+        {
+            inner_data->acceptor->close();
+            inner_data->acceptor.reset();
+        }
+        inner_data->ssl_context.reset();
+        inner_data->player_sessions.clear();
+        inner_data->bot_sessions.clear();
+        delete inner_data;
+        inner_ = nullptr;
+    }
+}
+
 std::expected<short, error>
-instance::run_async() noexcept
+instance::run_async()
 {
     auto inner_data = reinterpret_cast<inner*>(inner_);
     if (is_running_)
@@ -108,7 +128,7 @@ instance::run_async() noexcept
 }
 
 std::expected<std::tuple<>, error>
-instance::run() noexcept
+instance::run()
 {
     auto inner_data = reinterpret_cast<inner*>(inner_);
     auto result     = run_async();

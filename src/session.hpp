@@ -48,6 +48,11 @@ class session : public std::enable_shared_from_this<session<Tls>>
         , step_callback_(step_callback)
     {}
 
+    ~session()
+    {
+        ws_.close(boost::beast::websocket::close_code::normal);
+    }
+
     session(boost::asio::ip::tcp::socket &&socket, boost::asio::ssl::context &ctx,
             std::function<user_callback_proto> &step_callback)
         : client_endpoint_(socket.local_endpoint())

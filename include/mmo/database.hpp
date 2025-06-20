@@ -18,6 +18,7 @@ class MMO_API database
 
    public:
     database(std::string const& world_name);
+    ~database();
 
    public:
     std::expected<std::tuple<>, error> save_user(std::string const& nickname, std::string const& password);

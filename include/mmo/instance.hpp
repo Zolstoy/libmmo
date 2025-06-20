@@ -26,13 +26,14 @@ class MMO_API instance
 
    public:
     instance(std::string const& world_name, short port, std::string const& cert_pem, std::string const& key_pem,
-             std::function<user_callback_proto>&& step_callback) noexcept;
+             std::function<user_callback_proto>&& step_callback);
+    ~instance();
 
    private:
-    std::expected<short, error> run_async() noexcept;
+    std::expected<short, error> run_async();
 
    public:
-    std::expected<std::tuple<>, error> run() noexcept;
+    std::expected<std::tuple<>, error> run();
 
    private:
     void do_accept();

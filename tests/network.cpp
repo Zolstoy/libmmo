@@ -27,16 +27,21 @@
 
 using namespace boost;
 
-struct result {
-    struct no_error {
-    };
-    struct bad_event_type {
-    };
-    struct nickname_dont_match {
-    };
-    struct password_dont_match {
-    };
+namespace result {
+
+struct error_base : public std::exception {
 };
+
+struct no_error : public error_base {
+};
+struct bad_event_type : public error_base {
+};
+struct nickname_dont_match : public error_base {
+};
+struct password_dont_match : public error_base {
+};
+
+};   // namespace result
 
 struct network_test : public testing::Test {
     asio::ssl::context      ssl_context;
@@ -56,14 +61,6 @@ struct network_test : public testing::Test {
         // mmo::init_traces();
     }
 
-    ~network_test() override
-    {
-        spdlog::info("[test] Stopping IO context...");
-        ioc.stop();
-        // ioc_client.stop();
-        // ssl_context.shutdown();
-    }
-
     mmo::instance get_instance(std::function<mmo::user_callback_proto> &&func) const
     {
         return mmo::instance(get_random_instance_path(), 2456, CERT, KEY, std::move(func));
@@ -77,38 +74,29 @@ struct network_test : public testing::Test {
 
 TEST_F(network_test, case_01_accept)
 {
-    spdlog::info("[test] Getting instance...");
     auto                                                  instance = get_instance([](mmo::event &&event) -> void {
-        spdlog::info("[test] Inside handler");
         if (event.index() != mmo::events::accept::value)
-        {
             throw result::bad_event_type{};
-        }
         throw result::no_error{};
     });
     std::promise<std::expected<std::tuple<>, mmo::error>> pro;
     std::future<std::expected<std::tuple<>, mmo::error>>  fut = pro.get_future();
-    std::thread                                           t([&] {
-        spdlog::info("[test] Running instance...");
+    std::jthread                                          thrd([&] {
         try
         {
             auto result = instance.run();
             pro.set_value(result);
         } catch (...)
         {
-            // spdlog::error("[test] Exception: {}", e.what());
             pro.set_exception(std::current_exception());
         }
     });
 
-    spdlog::info("[test] Getting socket...");
     auto client_socket = get_socket();
 
     asio::ip::tcp::resolver resolver(this->ioc);
     auto                    results = resolver.resolve("127.0.0.1", "2456");
 
-    spdlog::info("[test] Connecting...");
-    // client_socket.next_layer().connect(asio::ip::tcp::endpoint(asio::ip::tcp::v4(), 2456));
     boost::system::error_code ec;
     ec = client_socket.next_layer().connect(results.begin()->endpoint(), ec);
     if (ec)
@@ -116,19 +104,15 @@ TEST_F(network_test, case_01_accept)
         spdlog::error("[test] Error connecting: {}", ec.message());
         ASSERT_FALSE(ec);
     }
-    // spdlog::info("[test] Handshaking...");
-    // client_socket.handshake(boost::asio::ssl::stream_base::client);
-
     std::expected<std::tuple<>, mmo::error> result;
 
     spdlog::info("[test] Getting results...");
     ASSERT_TRUE(fut.valid());
 
     ASSERT_THROW(result = fut.get(), result::no_error);
-    spdlog::info("[test] Joining...");
-    t.join();
-    // ASSERT_FALSE(result.has_value());
-    // ASSERT_EQ(static_cast<size_t>(mmo::error_code::error_not_implemented), result.error().index());
+    spdlog::info("TEST ENDED. Joining thread...");
+    thrd.join();
+    spdlog::info("[test] Thread joined.");
 }
 
 int
