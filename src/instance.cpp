@@ -44,7 +44,6 @@ struct inner {
 
     void on_accept(instance* owner, const boost::system::error_code& ec, boost::asio::ip::tcp::socket socket)
     {
-        user_callback(events::accept{});
         if (ec)
         {
             _INSTANCE_LOG(warn, "server: accept failed");
@@ -52,6 +51,7 @@ struct inner {
             return;
         }
         _INSTANCE_LOG(info, "server: new connection");
+        user_callback(events::accept{});
 
         auto new_session = std::make_shared<tls_session>(std::move(socket), *ssl_context, user_callback);
         new_session->run_async();
