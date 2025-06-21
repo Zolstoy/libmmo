@@ -1,8 +1,8 @@
 #include "instance.hpp"
 
-#include <expected>
 #include <stdarg.h>
 #include <string>
+#include <thread>
 
 #include <boost/asio.hpp>
 #include <boost/asio/buffer.hpp>
@@ -14,8 +14,8 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 
+#include "boost/asio/detail/chrono.hpp"
 #include "database.hpp"
-#include "error.hpp"
 #include "event.hpp"
 #include "session.hpp"
 
@@ -32,14 +32,10 @@ struct inner {
     std::shared_ptr<boost::asio::ip::tcp::acceptor> acceptor;
     std::vector<std::shared_ptr<tls_session>>       player_sessions;
     std::vector<std::shared_ptr<plain_session>>     bot_sessions;
-    std::string                                     cert_pem;
-    std::string                                     key_pem;
     std::function<user_callback_proto>              user_callback;
 
-    inner(std::string const& cert_pem, std::string const& key_pem, std::function<user_callback_proto>&& user_callback)
-        : cert_pem(cert_pem)
-        , key_pem(key_pem)
-        , user_callback(std::move(user_callback))
+    inner(std::function<user_callback_proto>&& user_callback)
+        : user_callback(std::move(user_callback))
     {}
 
     void on_accept(instance* owner, const boost::system::error_code& ec, boost::asio::ip::tcp::socket socket)
@@ -47,7 +43,6 @@ struct inner {
         if (ec)
         {
             _INSTANCE_LOG(warn, "server: accept failed");
-            owner->is_running_ = false;
             return;
         }
         _INSTANCE_LOG(info, "server: new connection");
@@ -62,82 +57,62 @@ struct inner {
 };
 
 instance::instance(std::string const& world_name, short port, std::string const& cert_pem, std::string const& key_pem,
-                   std::function<user_callback_proto>&& step_callback)
-    : inner_(reinterpret_cast<void*>(new inner(cert_pem, key_pem, std::move(step_callback))))
+                   std::function<user_callback_proto>&& user_callback)
+    : inner_(reinterpret_cast<void*>(new inner(std::move(user_callback))))
     , port_(port)
-    , is_running_(false)
     , database_(world_name)
-{}
+{
+    auto inner_data = reinterpret_cast<inner*>(inner_);
+
+    inner_data->acceptor = std::make_shared<boost::asio::ip::tcp::acceptor>(inner_data->io_context);
+    inner_data->acceptor->open(boost::asio::ip::tcp::v4());
+    inner_data->acceptor->set_option(boost::asio::socket_base::reuse_address(true));
+    inner_data->acceptor->bind(boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), port_));
+    inner_data->acceptor->listen();
+
+    inner_data->ssl_context = std::make_shared<boost::asio::ssl::context>(boost::asio::ssl::context::sslv23_server);
+    inner_data->ssl_context->set_options(boost::asio::ssl::context::default_workarounds);
+
+    inner_data->ssl_context->use_certificate_chain(asio::buffer(cert_pem));
+    inner_data->ssl_context->use_private_key(asio::buffer(key_pem), boost::asio::ssl::context::pem);
+}
 
 instance::~instance()
 {
-    is_running_     = false;
     auto inner_data = reinterpret_cast<inner*>(inner_);
     if (inner_data)
     {
-        inner_data->io_context.stop();
-        if (inner_data->acceptor)
-        {
-            inner_data->acceptor->close();
-            inner_data->acceptor.reset();
-        }
-        inner_data->ssl_context.reset();
-        inner_data->player_sessions.clear();
-        inner_data->bot_sessions.clear();
         delete inner_data;
         inner_ = nullptr;
     }
 }
 
-std::expected<short, error>
-instance::run_async()
+std::jthread
+instance::launch()
 {
-    auto inner_data = reinterpret_cast<inner*>(inner_);
-    if (is_running_)
-        return std::unexpected(instance_already_running{});
-
-    inner_data->acceptor = std::make_shared<boost::asio::ip::tcp::acceptor>(inner_data->io_context);
-    try
-    {
-        inner_data->acceptor->open(boost::asio::ip::tcp::v4());
-        inner_data->acceptor->set_option(boost::asio::socket_base::reuse_address(true));
-        inner_data->acceptor->bind(boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), port_));
-        inner_data->acceptor->listen();
-
-        inner_data->ssl_context = std::make_shared<boost::asio::ssl::context>(boost::asio::ssl::context::sslv23_server);
-        inner_data->ssl_context->set_options(boost::asio::ssl::context::default_workarounds);
-    } catch (...)
-    {
-        return std::unexpected(acceptor_failed{});
-    }
-
-    boost::system::error_code ec;
-    if (inner_data->ssl_context->use_certificate_chain(asio::buffer(inner_data->cert_pem), ec))
-        return std::unexpected(invalid_certificate{ec.message()});
-    if (inner_data->ssl_context->use_private_key(asio::buffer(inner_data->key_pem), boost::asio::ssl::context::pem, ec))
-        return std::unexpected(invalid_private_key{ec.message()});
-    try
-    {
+    return std::jthread([this](std::stop_token stoken) {
+        _INSTANCE_LOG(info, "server: io_context started on port {}", port_);
         do_accept();
-    } catch (...)
-    {
-        return std::unexpected(acceptor_failed{});
-    }
-    is_running_ = true;
-    return 0;
+        auto                      inner_data = reinterpret_cast<inner*>(inner_);
+        boost::asio::steady_timer timer(inner_data->io_context, boost::asio::chrono::milliseconds(250));
+        timer.async_wait([this, inner_data, stoken](const boost::system::error_code& ec) {
+            _INSTANCE_LOG(info, "Tick!");
+            // inner_data->io_context.restart();
+            if (stoken.stop_requested())
+            {
+                _INSTANCE_LOG(info, "server: stop requested");
+                return;
+            }
+            inner_data->acceptor->close();
+        });
+        inner_data->io_context.run();
+        _INSTANCE_LOG(info, "server: io_context stopped");
+    });
 }
 
-std::expected<std::tuple<>, error>
-instance::run()
-{
-    auto inner_data = reinterpret_cast<inner*>(inner_);
-    auto result     = run_async();
-    if (!result)
-        return std::unexpected(result.error());
-
-    inner_data->io_context.run();
-    return std::tuple<>();
-}
+// void
+// instance::run()
+// {}
 
 void
 instance::do_accept()

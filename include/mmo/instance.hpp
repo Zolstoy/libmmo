@@ -2,12 +2,11 @@
 
 #include "config.hpp"
 
-#include <expected>
 #include <functional>
 #include <string>
+#include <thread>
 
 #include "database.hpp"
-#include "error.hpp"
 #include "event.hpp"
 
 namespace mmo {
@@ -18,10 +17,8 @@ class MMO_API instance
     friend struct inner;
 
    private:
-    void* inner_;
-    short port_;
-
-    bool     is_running_;
+    void*    inner_;
+    short    port_;
     database database_;
 
    public:
@@ -29,11 +26,9 @@ class MMO_API instance
              std::function<user_callback_proto>&& step_callback);
     ~instance();
 
-   private:
-    std::expected<short, error> run_async();
-
    public:
-    std::expected<std::tuple<>, error> run();
+    std::jthread launch();
+    void         run();
 
    private:
     void do_accept();
