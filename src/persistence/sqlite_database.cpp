@@ -33,7 +33,7 @@ struct inner {
     {}
 };
 
-database::database(std::string const& world_name)
+sqlite_database::sqlite_database(std::string const& world_name)
     : init_pos_x_(0)
     , init_pos_y_(0)
 {
@@ -74,7 +74,7 @@ database::database(std::string const& world_name)
     }
 }
 
-database::~database()
+sqlite_database::~sqlite_database()
 {
     auto inner_data = reinterpret_cast<inner*>(inner_);
     if (inner_data)
@@ -85,7 +85,7 @@ database::~database()
 }
 
 std::expected<std::tuple<>, error>
-database::save_user(std::string const& nickname, std::string const& password)
+sqlite_database::save_user(std::string const& nickname, std::string const& password)
 {
     auto              inner_data = reinterpret_cast<inner*>(inner_);
     std::lock_guard   guard(inner_data->mutex);
@@ -117,7 +117,7 @@ database::save_user(std::string const& nickname, std::string const& password)
 }
 
 std::expected<player, error>
-database::load_user_player(std::string const& nickname, std::string const& password)
+sqlite_database::load_user_player(std::string const& nickname, std::string const& password)
 {
     auto            inner_data = reinterpret_cast<inner*>(inner_);
     std::lock_guard guard(inner_data->mutex);
@@ -152,7 +152,7 @@ database::load_user_player(std::string const& nickname, std::string const& passw
 }
 
 void
-database::set_init_position(float pos_x, float pos_y)
+sqlite_database::set_init_position(float pos_x, float pos_y)
 {
     auto            inner_data = reinterpret_cast<inner*>(inner_);
     std::lock_guard guard(inner_data->mutex);

@@ -8,12 +8,12 @@
 
 TEST(database, case_01_creation)
 {
-    ASSERT_NO_THROW(mmo::database db(get_random_instance_path()));
+    ASSERT_NO_THROW(mmo::sqlite_database db(get_random_instance_path()));
 }
 
 TEST(database, case_02_saveuser)
 {
-    mmo::database db(get_random_instance_path());
+    mmo::sqlite_database db(get_random_instance_path());
 
     std::expected<std::tuple<>, mmo::error> result;
 
@@ -23,7 +23,7 @@ TEST(database, case_02_saveuser)
 
 TEST(database, case_03_loadplayer)
 {
-    mmo::database db(get_random_instance_path());
+    mmo::sqlite_database db(get_random_instance_path());
 
     db.set_init_position(24, 42);
 

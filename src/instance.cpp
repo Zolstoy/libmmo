@@ -6,6 +6,7 @@
 
 #include <boost/asio.hpp>
 #include <boost/asio/buffer.hpp>
+#include <boost/asio/detail/chrono.hpp>
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/ssl.hpp>
 #include <boost/asio/ssl/context.hpp>
@@ -14,10 +15,9 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 
-#include "boost/asio/detail/chrono.hpp"
-#include "database.hpp"
 #include "event.hpp"
 #include "session.hpp"
+#include "sqlite_database.hpp"
 
 using namespace boost;
 
@@ -31,14 +31,13 @@ struct inner {
     std::shared_ptr<boost::asio::ssl::context>      ssl_context;
     std::shared_ptr<boost::asio::ip::tcp::acceptor> acceptor;
     std::vector<std::shared_ptr<tls_session>>       player_sessions;
-    std::vector<std::shared_ptr<plain_session>>     bot_sessions;
     std::function<user_callback_proto>              user_callback;
 
     inner(std::function<user_callback_proto>&& user_callback)
         : user_callback(std::move(user_callback))
     {}
 
-    void on_accept(instance* owner, const boost::system::error_code& ec, boost::asio::ip::tcp::socket socket)
+    void on_accept(game* owner, const boost::system::error_code& ec, boost::asio::ip::tcp::socket socket)
     {
         if (ec)
         {
@@ -56,8 +55,8 @@ struct inner {
     }
 };
 
-instance::instance(std::string const& world_name, short port, std::string const& cert_pem, std::string const& key_pem,
-                   std::function<user_callback_proto>&& user_callback)
+game::game(std::string const& world_name, short port, std::string const& cert_pem, std::string const& key_pem,
+           std::function<user_callback_proto>&& user_callback)
     : inner_(reinterpret_cast<void*>(new inner(std::move(user_callback))))
     , port_(port)
     , database_(world_name)
@@ -77,7 +76,7 @@ instance::instance(std::string const& world_name, short port, std::string const&
     inner_data->ssl_context->use_private_key(asio::buffer(key_pem), boost::asio::ssl::context::pem);
 }
 
-instance::~instance()
+game::~game()
 {
     auto inner_data = reinterpret_cast<inner*>(inner_);
     if (inner_data)
@@ -88,7 +87,7 @@ instance::~instance()
 }
 
 std::jthread
-instance::launch()
+game::launch()
 {
     return std::jthread([this](std::stop_token stoken) {
         _INSTANCE_LOG(info, "server: io_context started on port {}", port_);
@@ -115,7 +114,7 @@ instance::launch()
 // {}
 
 void
-instance::do_accept()
+game::do_accept()
 {
     auto inner_data = reinterpret_cast<inner*>(inner_);
     inner_data->acceptor->async_accept(

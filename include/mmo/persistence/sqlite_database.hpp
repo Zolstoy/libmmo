@@ -9,7 +9,7 @@
 
 namespace mmo {
 
-class MMO_API database
+class MMO_API sqlite_database
 {
    private:
     void* inner_;
@@ -17,8 +17,8 @@ class MMO_API database
     float init_pos_y_;
 
    public:
-    database(std::string const& world_name);
-    ~database();
+    sqlite_database(std::string const& world_name);
+    ~sqlite_database();
 
    public:
     std::expected<std::tuple<>, error> save_user(std::string const& nickname, std::string const& password);
