@@ -148,18 +148,6 @@ class MMO_API game
         , scheduler_(scheduler)
     {}
 
-    game(C &cycle, std::string const &world_name, std::string const &cert_pem_path, std::string const &key_pem_path,
-         std::string const &smtp_username, std::string const &smtp_password, std::string const &smtp_url)
-        : cycle_(cycle
-        , registrar_(email_confirm{smtp_username, smtp_password, smtp_url})
-        , authenticator_(nickname_password<sqlite_database>{persistence_})
-        , persistence_(sqlite_database{world_name})
-        , transport_(secure_websocket{cert_pem_path, key_pem_path, smtp_username, smtp_password, smtp_url})
-        , scheduler_(mono_threaded{})
-    {
-        persistence_.set_init_position(0.0f, 0.0f);
-    }
-
     template <class Rep, class Period = std::ratio<1>>
     void run(std::chrono::duration<Rep, Period> const &tick_duration)
     {
@@ -168,5 +156,23 @@ class MMO_API game
         transport_.stop();
     }
 };
+
+void
+run_game(std::string const &world_name, std::string const &certificate_pem_path,
+         std::string const &private_key_pem_path, std::string const &smtp_username, std::string const &smtp_password,
+         std::string const &smtp_url)
+{
+    secure_websocket                 transport(certificate_pem_path, private_key_pem_path);
+    mono_threaded                    cycle;
+    email_confirm                    registrar(smtp_username, smtp_password, smtp_url);
+    nickname_password<email_confirm> authenticator(registrar);
+    sqlite_database                  persistence(world_name);
+
+    game<mono_threaded, email_confirm, nickname_password<email_confirm>, sqlite_database, secure_websocket,
+         mono_threaded>
+        my_game(cycle, registrar, authenticator, persistence, transport, cycle);
+
+    my_game.run(std::chrono::seconds(1));
+}
 
 }   // namespace mmo

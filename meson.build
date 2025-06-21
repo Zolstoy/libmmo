@@ -21,7 +21,7 @@ spdlog = dependency('spdlog', default_options: ['default_library=static'])
 
 mmo = library('mmo', [
     'src/persistence/sqlite_database.cpp',
-    'src/tranport/secure_websocket.cpp',
+    'src/transport/secure_websocket.cpp',
     'src/email.cpp',
     'src/hash.cpp',
     'src/http.cpp',
