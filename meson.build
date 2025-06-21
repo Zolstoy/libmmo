@@ -19,15 +19,13 @@ cereal = dependency('cereal')
 openssl = dependency('openssl')
 spdlog = dependency('spdlog', default_options: ['default_library=static'])
 
-mmo = library('mmo',
-  [
+mmo = library('mmo', [
     'src/persistence/sqlite_database.cpp',
     'src/tranport/secure_websocket.cpp',
     'src/email.cpp',
     'src/hash.cpp',
     'src/http.cpp',
-    'src/tracing.cpp'
-],
+    'src/tracing.cpp'],
   dependencies: [
     boost_headers,
     cereal,
@@ -35,65 +33,21 @@ mmo = library('mmo',
     openssl,
     dependency('perlin_noise'),
     spdlog,
-    dependency('sqlitecpp', default_options: ['default_library=static']),
-],
+    dependency('sqlitecpp', default_options: ['default_library=static']),],
   include_directories: include_directories('include/mmo', 'src'),
   cpp_args: common_cpp_args + '-DMMO_BUILDING_THE_LIB',
   override_options: override_args,
-  install: true
-)
+  install: true)
 
 gtest = dependency('gtest')
 gtest_main = dependency('gtest_main')
 
-test_database = executable('test-database',
-  [
+test('game', executable('test-game', [
     'tests/common.cpp',
-    'tests/database.cpp',
-  ],
+    'tests/game.cpp'],
   dependencies: [gtest, gtest_main],
   include_directories: include_directories('include'),
   cpp_args: common_cpp_args,
   override_options: override_args,
-  link_with: mmo
-)
-test('database', test_database, args : ['--gtest_color=yes'])
-
-test_instance = executable('test-instance',
-  [
-    'tests/common.cpp',
-    'tests/instance.cpp',
-  ],
-  dependencies: [gtest, gtest_main, boost_headers, openssl, cereal],
-  include_directories: include_directories('include'),
-  cpp_args: common_cpp_args,
-  override_options: override_args,
-  link_with: mmo
-)
-test('instance', test_instance, args : ['--gtest_color=yes'])
-
-test_network = executable('test-network',
-  [
-    'tests/common.cpp',
-    'tests/network.cpp',
-  ],
-  dependencies: [gtest, boost_headers, openssl, cereal, spdlog],
-  include_directories: include_directories('include', 'src'),
-  cpp_args: common_cpp_args,
-  override_options: override_args,
-  link_with: mmo
-)
-test('network', test_network, args : ['--gtest_color=yes'])
-
-test_siege = executable('test-siege',
-  [
-    'tests/common.cpp',
-    'tests/siege.cpp',
-  ],
-  dependencies: [gtest, gtest_main, boost_headers, openssl, cereal],
-  include_directories: include_directories('include'),
-  cpp_args: common_cpp_args,
-  override_options: override_args,
-  link_with: mmo
-)
-test('siege', test_siege, args : ['--gtest_color=yes'])
+  link_with: mmo),
+args : ['--gtest_color=yes'])
