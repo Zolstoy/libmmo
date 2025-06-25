@@ -1,8 +1,0 @@
-[wrap-file]
-directory = PerlinNoise-meson
-source_url = https://github.com/Zolstoy/PerlinNoise/archive/refs/tags/meson.tar.gz
-source_filename = meson.tar.gz
-source_hash = cd51c7abfc12e33d934838b2ae70946332495727eee6fc9c11ba7e9537a16bc9
-
-[provide]
-perlin_noise = perlin_noise_dep

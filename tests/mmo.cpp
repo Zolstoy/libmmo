@@ -1,9 +1,20 @@
 #include <cstddef>
 #include <future>
 
+#include <boost/asio.hpp>
+#include <boost/beast.hpp>
+
 #include <mmo/mmo.hpp>
 
 #include <gtest/gtest.h>
+
+#include "boost/asio/io_context.hpp"
+#include "boost/asio/ip/address_v4.hpp"
+#include "boost/asio/ssl/context.hpp"
+#include "boost/asio/ssl/stream.hpp"
+#include "boost/asio/ssl/stream_base.hpp"
+
+using namespace boost;
 
 class test_01_start : public ::testing::Test
 {
@@ -90,7 +101,8 @@ class test_01_start : public ::testing::Test
     std::vector<uint8_t> const server_key;
 
    private:
-    size_t cnt_;
+    size_t           cnt_;
+    asio::io_context ioc_;
 
    public:
     test_01_start()
@@ -117,6 +129,11 @@ class test_01_start : public ::testing::Test
     size_t get_cnt()
     {
         return cnt_;
+    }
+
+    asio::io_context &get_ioc()
+    {
+        return ioc_;
     }
 };
 
@@ -189,4 +206,26 @@ TEST_F(test_01_start, case_09_one_tick_thousand_millis)
 
     ASSERT_NO_THROW(fut.get());
     ASSERT_EQ(n_ticks, get_cnt());
+}
+
+TEST_F(test_01_start, case_10_one_connection)
+{
+    auto fut = std::async([&] { mmo::start(get_cycle(1), server_cert, server_key, 1000, DEFAULT_PORT); });
+
+    asio::ip::tcp::socket socket(get_ioc());
+    socket.connect(boost::asio::ip::tcp::endpoint(asio::ip::address_v4::loopback(), DEFAULT_PORT));
+    ASSERT_NO_THROW(fut.get());
+}
+
+TEST_F(test_01_start, case_11_one_handshake)
+{
+    auto fut = std::async([&] { mmo::start(get_cycle(1), server_cert, server_key, 1000, DEFAULT_PORT); });
+
+    asio::ip::tcp::socket socket(get_ioc());
+    socket.connect(boost::asio::ip::tcp::endpoint(asio::ip::address_v4::loopback(), DEFAULT_PORT));
+    asio::ssl::context ssl_ctx(asio::ssl::context::method::sslv23_client);
+    ssl_ctx.add_certificate_authority(asio::buffer(ca_cert));
+    asio::ssl::stream<decltype(socket)> secure_socket(std::move(socket), ssl_ctx);
+    secure_socket.handshake(asio::ssl::stream_base::client);
+    ASSERT_NO_THROW(fut.get());
 }

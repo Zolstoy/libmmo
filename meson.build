@@ -38,7 +38,7 @@ gtest_main = dependency('gtest_main')
 
 test('all', executable('tests', [
     'tests/mmo.cpp'],
-  dependencies: [mmo_dep, gtest, gtest_main],
+  dependencies: [mmo_dep, gtest, gtest_main, boost_headers, openssl],
   cpp_args: common_cpp_args,
   override_options: override_args,
   ))
