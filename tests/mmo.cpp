@@ -1,5 +1,6 @@
 #include <cstddef>
 #include <future>
+#include <print>
 
 #include <boost/asio.hpp>
 #include <boost/beast.hpp>
@@ -16,7 +17,7 @@
 
 using namespace boost;
 
-class test_01_start : public ::testing::Test
+class test_base : public ::testing::Test
 {
    private:
     static constexpr std::string_view CA_CERT =
@@ -105,7 +106,7 @@ class test_01_start : public ::testing::Test
     asio::io_context ioc_;
 
    public:
-    test_01_start()
+    test_base()
         : ca_cert(reinterpret_cast<uint8_t const *>(CA_CERT.data()),
                   reinterpret_cast<uint8_t const *>(CA_CERT.data()) + CA_CERT.size())
         , server_cert(reinterpret_cast<uint8_t const *>(SERVER_CERT.data()),
@@ -113,7 +114,9 @@ class test_01_start : public ::testing::Test
         , server_key(reinterpret_cast<uint8_t const *>(SERVER_KEY.data()),
                      reinterpret_cast<uint8_t const *>(SERVER_KEY.data()) + SERVER_KEY.size())
         , cnt_(0)
-    {}
+    {
+        std::println("TEST FIXTURE");
+    }
 
     mmo::game_cycle get_cycle(size_t n_cycles = 1)
     {
@@ -136,6 +139,10 @@ class test_01_start : public ::testing::Test
         return ioc_;
     }
 };
+
+using test_01_start   = test_base;
+using test_02_cycle   = test_base;
+using test_03_network = test_base;
 
 TEST_F(test_01_start, case_01_call_nominal)
 {
@@ -163,7 +170,7 @@ TEST_F(test_01_start, case_04_call_failure_tick_zero)
     ASSERT_EQ(0, get_cnt());
 }
 
-TEST_F(test_01_start, case_05_two_ticks)
+TEST_F(test_02_cycle, case_01_two_ticks)
 {
     auto n_ticks = 2;
     auto fut     = std::async([&] { mmo::start(get_cycle(n_ticks), server_cert, server_key, 1, DEFAULT_PORT); });
@@ -172,7 +179,7 @@ TEST_F(test_01_start, case_05_two_ticks)
     ASSERT_EQ(n_ticks, get_cnt());
 }
 
-TEST_F(test_01_start, case_06_thousand_ticks)
+TEST_F(test_02_cycle, case_02_thousand_ticks)
 {
     auto n_ticks = 1000;
     auto fut     = std::async([&] { mmo::start(get_cycle(n_ticks), server_cert, server_key, 1, DEFAULT_PORT); });
@@ -181,7 +188,7 @@ TEST_F(test_01_start, case_06_thousand_ticks)
     ASSERT_EQ(n_ticks, get_cnt());
 }
 
-TEST_F(test_01_start, case_07_hundred_ticks_ten_millis)
+TEST_F(test_02_cycle, case_03_hundred_ticks_ten_millis)
 {
     auto n_ticks = 100;
     auto fut     = std::async([&] { mmo::start(get_cycle(n_ticks), server_cert, server_key, 10, DEFAULT_PORT); });
@@ -190,7 +197,7 @@ TEST_F(test_01_start, case_07_hundred_ticks_ten_millis)
     ASSERT_EQ(n_ticks, get_cnt());
 }
 
-TEST_F(test_01_start, case_08_ten_ticks_hundred_millis)
+TEST_F(test_02_cycle, case_04_ten_ticks_hundred_millis)
 {
     auto n_ticks = 10;
     auto fut     = std::async([&] { mmo::start(get_cycle(n_ticks), server_cert, server_key, 100, DEFAULT_PORT); });
@@ -199,7 +206,7 @@ TEST_F(test_01_start, case_08_ten_ticks_hundred_millis)
     ASSERT_EQ(n_ticks, get_cnt());
 }
 
-TEST_F(test_01_start, case_09_one_tick_thousand_millis)
+TEST_F(test_02_cycle, case_05_one_tick_thousand_millis)
 {
     auto n_ticks = 1;
     auto fut     = std::async([&] { mmo::start(get_cycle(n_ticks), server_cert, server_key, 1000, DEFAULT_PORT); });
@@ -208,7 +215,7 @@ TEST_F(test_01_start, case_09_one_tick_thousand_millis)
     ASSERT_EQ(n_ticks, get_cnt());
 }
 
-TEST_F(test_01_start, case_10_one_connection)
+TEST_F(test_03_network, case_01_one_connection)
 {
     auto fut = std::async([&] { mmo::start(get_cycle(1), server_cert, server_key, 1000, DEFAULT_PORT); });
 
@@ -217,13 +224,15 @@ TEST_F(test_01_start, case_10_one_connection)
     ASSERT_NO_THROW(fut.get());
 }
 
-TEST_F(test_01_start, case_11_one_handshake)
+TEST_F(test_03_network, case_02_one_handshake)
 {
     auto fut = std::async([&] { mmo::start(get_cycle(1), server_cert, server_key, 1000, DEFAULT_PORT); });
 
     asio::ip::tcp::socket socket(get_ioc());
     socket.connect(boost::asio::ip::tcp::endpoint(asio::ip::address_v4::loopback(), DEFAULT_PORT));
+
     asio::ssl::context ssl_ctx(asio::ssl::context::method::sslv23_client);
+    ssl_ctx.set_options(boost::asio::ssl::context::default_workarounds);
     ssl_ctx.add_certificate_authority(asio::buffer(ca_cert));
     asio::ssl::stream<decltype(socket)> secure_socket(std::move(socket), ssl_ctx);
     secure_socket.handshake(asio::ssl::stream_base::client);

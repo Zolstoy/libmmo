@@ -2,6 +2,7 @@
 
 #include <cstdlib>
 #include <memory>
+#include <print>
 
 #include <boost/asio/basic_stream_socket.hpp>
 #include <boost/asio/dispatch.hpp>
@@ -24,12 +25,12 @@ class session;
 using on_message_proto = void(std::shared_ptr<session<true>>, std::string const &);
 using on_message       = std::function<on_message_proto>;
 
-template <bool Tls = true>
-class session : public std::enable_shared_from_this<session<Tls>>
+template <bool IsTls = true>
+class session : public std::enable_shared_from_this<session<IsTls>>
 {
    public:
     using next_layer_type =
-        std::conditional_t<Tls, boost::asio::ssl::stream<boost::beast::tcp_stream>, boost::beast::tcp_stream>;
+        std::conditional_t<IsTls, boost::asio::ssl::stream<boost::beast::tcp_stream>, boost::beast::tcp_stream>;
     using websocket_type = boost::beast::websocket::stream<next_layer_type, true>;
 
    protected:
@@ -70,14 +71,15 @@ class session : public std::enable_shared_from_this<session<Tls>>
 
     void run_async()
     {
-        if (!Tls)
+        if (!IsTls)
         {
-            ws_.async_accept(boost::beast::bind_front_handler(&session::on_accept, session<Tls>::shared_from_this()));
+            ws_.async_accept(boost::beast::bind_front_handler(&session::on_accept, session<IsTls>::shared_from_this()));
         } else
         {
+            std::println("ASYNC HANDSHAKE");
             ws_.next_layer().async_handshake(
                 boost::asio::ssl::stream_base::server,
-                boost::beast::bind_front_handler(&session::on_handshake, session<Tls>::shared_from_this()));
+                boost::beast::bind_front_handler(&session::on_handshake, session<IsTls>::shared_from_this()));
         }
     }
 
@@ -86,7 +88,7 @@ class session : public std::enable_shared_from_this<session<Tls>>
     {
         if (ec)
             return;
-        ws_.async_accept(boost::beast::bind_front_handler(&session::on_accept, session<Tls>::shared_from_this()));
+        ws_.async_accept(boost::beast::bind_front_handler(&session::on_accept, session<IsTls>::shared_from_this()));
     }
 
     void on_accept(boost::beast::error_code ec)
@@ -98,7 +100,7 @@ class session : public std::enable_shared_from_this<session<Tls>>
 
     void do_read()
     {
-        ws_.async_read(buffer_, std::bind(&session<Tls>::on_read, session<Tls>::shared_from_this(),
+        ws_.async_read(buffer_, std::bind(&session<IsTls>::on_read, session<IsTls>::shared_from_this(),
                                           std::placeholders::_1, std::placeholders::_2));
     }
 
@@ -110,7 +112,7 @@ class session : public std::enable_shared_from_this<session<Tls>>
         std::string message = boost::beast::buffers_to_string(buffer_.data());
         buffer_.consume(buffer_.size());
 
-        on_message_(session<Tls>::shared_from_this(), message);
+        on_message_(session<IsTls>::shared_from_this(), message);
 
         do_read();
     };
