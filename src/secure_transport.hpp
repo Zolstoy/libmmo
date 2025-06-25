@@ -1,8 +1,9 @@
 #pragma once
 
+#include <stdarg.h>
+
 #include <chrono>
 #include <functional>
-#include <stdarg.h>
 
 #include <boost/asio.hpp>
 #include <boost/asio/buffer.hpp>
@@ -10,14 +11,10 @@
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/ssl.hpp>
 #include <boost/asio/ssl/context.hpp>
+#include <boost/asio/steady_timer.hpp>
 #include <boost/system/detail/error_code.hpp>
 
-#include <spdlog/sinks/stdout_color_sinks.h>
-#include <spdlog/spdlog.h>
-
 #include "session.hpp"
-
-#include "boost/asio/steady_timer.hpp"
 
 using namespace boost;
 
@@ -53,7 +50,6 @@ struct secure_transport : public std::enable_shared_from_this<secure_transport> 
 
     void on_accept(const boost::system::error_code& ec, boost::asio::ip::tcp::socket socket)
     {
-        spdlog::debug("New connection accepted");
         if (ec)
             return;
 
@@ -67,17 +63,12 @@ struct secure_transport : public std::enable_shared_from_this<secure_transport> 
     void timer_handler(std::function<void()> on_message_callback, const boost::system::error_code& error)
     {
         if (error)
-        {
-            spdlog::error("Timer error: {}", error.message());
             return;
-        }
-        spdlog::debug("Timer expired, executing callback");
         on_message_callback();
         timer_.expires_at(boost::asio::steady_timer::clock_type::now() + std::chrono::milliseconds(1000));
         timer_.async_wait(std::bind(&secure_transport::timer_handler, shared_from_this(), on_message_callback,
                                     std::placeholders::_1));
     }
-
     void set_timer(unsigned short duration_in_ms, std::function<void()>&& callback)
     {
         timer_.expires_at(boost::asio::steady_timer::clock_type::now() + std::chrono::milliseconds(duration_in_ms));
@@ -101,7 +92,6 @@ struct secure_transport : public std::enable_shared_from_this<secure_transport> 
 
     void do_accept()
     {
-        spdlog::debug("Waiting for new connections on port {}", port_);
         acceptor->async_accept(
             std::bind(&secure_transport::on_accept, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
     }

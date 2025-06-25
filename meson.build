@@ -2,7 +2,7 @@ project('libmmo', 'cpp', version : '0.2.0', meson_version : '>=1.0.0')
 
 if host_machine.system() == 'windows'
  override_args = ['cpp_std=vc++latest']
- common_cpp_args =  ['-D_WIN32_WINNT=0x0601']
+ common_cpp_args =  ['-D_WIN32_WINNT=0x0601', '/bigobj']
 else
  override_args = ['cpp_std=c++23']
  common_cpp_args = []
@@ -37,7 +37,6 @@ gtest = dependency('gtest')
 gtest_main = dependency('gtest_main')
 
 test('all', executable('tests', [
-    'tests/common.cpp',
     'tests/mmo.cpp'],
   dependencies: [mmo_dep, gtest, gtest_main],
   cpp_args: common_cpp_args,

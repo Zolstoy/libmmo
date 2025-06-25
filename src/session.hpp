@@ -16,8 +16,6 @@
 #include <boost/beast/websocket/stream_base.hpp>
 #include <boost/system/detail/error_code.hpp>
 
-#include <spdlog/spdlog.h>
-
 namespace mmo {
 
 template <bool Tls>
@@ -63,8 +61,6 @@ class session : public std::enable_shared_from_this<session<Tls>>
     {
         boost::beast::error_code ec;
         ws_.close(boost::beast::websocket::close_code::normal, ec);
-        if (ec)
-            spdlog::error("Error closing WebSocket: {}", ec.message());
     }
 
     void on_message(on_message &&callback)

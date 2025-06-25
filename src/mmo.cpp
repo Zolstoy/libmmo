@@ -53,7 +53,6 @@ start(game_cycle &&cycle, std::vector<uint8_t> const &cert_pem, std::vector<uint
                                                      std::ref(players), std::ref(session_to_player_id)));
 
     transport->set_timer(tick_in_ms, std::bind(on_time_, tick_in_ms, players, cycle, transport));
-    spdlog::info("Starting MMO server on port {}", port);
     transport->start();
 }
 
