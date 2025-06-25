@@ -43,15 +43,15 @@ jobs:
 
       - run: pip install meson ninja
 
-      - run: meson setup --buildtype debug --backend=ninja build --default-library=static
+      - run: meson setup --buildtype debug --backend=ninja build
         env:
           BOOST_ROOT: "${{ github.workspace }}/boost/boost"
 
       - run: meson compile -C build
 
-      - run: tar -zcvf data.tar.gz build meson.build
+      - run: tar -zcvf build.tar.gz build meson.build
 
       - uses: actions/upload-artifact@v4
         with:
-          name: data
-          path: data.tar.gz
+          name: build
+          path: build.tar.gz

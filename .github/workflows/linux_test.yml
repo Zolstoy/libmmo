@@ -39,10 +39,10 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           run-id: ${{ steps.get_run_id.outputs.value }}
-          name: data
+          name: build
           github-token: ${{ secrets.GH_PAT }}
 
-      - run: tar zxvf data.tar.gz
+      - run: tar zxvf build.tar.gz
 
       - run: LDFLAGS=-L$(pwd)/install/lib/x86_64-linux-gnu ./build/test-instance-with-asio
       - run: LDFLAGS=-L$(pwd)/install/lib/x86_64-linux-gnu ./build/test-network
