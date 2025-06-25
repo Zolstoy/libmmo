@@ -86,10 +86,12 @@ class test_01_start : public ::testing::Test
     static constexpr unsigned short DEFAULT_PORT = 8685;
 
    public:
-    std::vector<uint8_t> ca_cert;
-    std::vector<uint8_t> server_cert;
-    std::vector<uint8_t> server_key;
-    mmo::game_cycle      return_immediately;
+    std::vector<uint8_t> const ca_cert;
+    std::vector<uint8_t> const server_cert;
+    std::vector<uint8_t> const server_key;
+
+   private:
+    size_t cnt_;
 
    public:
     test_01_start()
@@ -99,50 +101,72 @@ class test_01_start : public ::testing::Test
                       reinterpret_cast<uint8_t const *>(SERVER_CERT.data()) + SERVER_CERT.size())
         , server_key(reinterpret_cast<uint8_t const *>(SERVER_KEY.data()),
                      reinterpret_cast<uint8_t const *>(SERVER_KEY.data()) + SERVER_KEY.size())
-        , return_immediately([](float, std::map<size_t, std::shared_ptr<mmo::player>> const &) -> mmo::order {
-            return mmo::order::stop;
-        })
+        , cnt_(0)
     {}
+
+    mmo::game_cycle get_cycle(size_t n_cycles = 1)
+    {
+        return [cnt = std::ref(cnt_), n = n_cycles](
+                   float, std::map<size_t, std::shared_ptr<mmo::player>> const &) -> mmo::order {
+            ++cnt;
+            if (cnt == n)
+                return mmo::order::stop;
+            return mmo::order::keep_going;
+        };
+    }
+
+    size_t get_cnt()
+    {
+        return cnt_;
+    }
 };
 
 TEST_F(test_01_start, case_01_call_nominal)
 {
-    ASSERT_NO_THROW(mmo::start(std::move(return_immediately), server_cert, server_key, INSTANT_TICK, DEFAULT_PORT));
+    ASSERT_NO_THROW(mmo::start(get_cycle(), server_cert, server_key, INSTANT_TICK, DEFAULT_PORT));
+    ASSERT_EQ(1, get_cnt());
 }
 
 TEST_F(test_01_start, case_02_call_failure_bad_cert)
 {
-    ASSERT_ANY_THROW(mmo::start(std::move(return_immediately), std::vector(server_cert.cbegin(), server_cert.cbegin()),
-                                server_key, INSTANT_TICK, DEFAULT_PORT));
+    ASSERT_ANY_THROW(mmo::start(get_cycle(), std::vector(server_cert.cbegin(), server_cert.cbegin()), server_key,
+                                INSTANT_TICK, DEFAULT_PORT));
+    ASSERT_EQ(0, get_cnt());
 }
 
 TEST_F(test_01_start, case_03_call_failure_bad_key)
 {
-    ASSERT_ANY_THROW(mmo::start(std::move(return_immediately), server_cert,
-                                std::vector(server_key.cbegin(), server_key.cbegin()), INSTANT_TICK, DEFAULT_PORT));
+    ASSERT_ANY_THROW(mmo::start(get_cycle(), server_cert, std::vector(server_key.cbegin(), server_key.cbegin()),
+                                INSTANT_TICK, DEFAULT_PORT));
+    ASSERT_EQ(0, get_cnt());
 }
 
-TEST_F(test_01_start, case_04_two_ticks)
+TEST_F(test_01_start, case_04_call_failure_tick_zero)
 {
-    auto fut = std::async([&] {
-        size_t cnt = 0;
-        mmo::start(
-            [&](float, std::map<size_t, std::shared_ptr<mmo::player>> const &) -> mmo::order {
-                ++cnt;
-                if (cnt == 2)
-                    return mmo::order::stop;
-                return mmo::order::keep_going;
-            },
-            server_cert, server_key, INSTANT_TICK, DEFAULT_PORT);
-    });
+    ASSERT_ANY_THROW(mmo::start(get_cycle(), server_cert, server_key, 0, DEFAULT_PORT));
+    ASSERT_EQ(0, get_cnt());
+}
+
+TEST_F(test_01_start, case_05_two_ticks)
+{
+    auto fut = std::async([&] { mmo::start(get_cycle(2), server_cert, server_key, INSTANT_TICK, DEFAULT_PORT); });
 
     ASSERT_NO_THROW(fut.get());
+    ASSERT_EQ(2, get_cnt());
 }
 
-int
-main(int argc, char **argv)
+TEST_F(test_01_start, case_05_three_ticks)
 {
-    // init_traces();
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
+    auto fut = std::async([&] { mmo::start(get_cycle(3), server_cert, server_key, INSTANT_TICK, DEFAULT_PORT); });
+
+    ASSERT_NO_THROW(fut.get());
+    ASSERT_EQ(3, get_cnt());
+}
+
+TEST_F(test_01_start, case_06_forty_ticks)
+{
+    auto fut = std::async([&] { mmo::start(get_cycle(40), server_cert, server_key, 10, DEFAULT_PORT); });
+
+    ASSERT_NO_THROW(fut.get());
+    ASSERT_EQ(40, get_cnt());
 }

@@ -60,20 +60,21 @@ struct secure_transport : public std::enable_shared_from_this<secure_transport> 
         do_accept();
     }
 
-    void timer_handler(std::function<void()> on_message_callback, const boost::system::error_code& error)
+    void timer_handler(std::function<void()> on_message_callback, const boost::system::error_code& error,
+                       unsigned short duration_in_ms)
     {
         if (error)
             return;
         on_message_callback();
-        timer_.expires_at(boost::asio::steady_timer::clock_type::now() + std::chrono::milliseconds(1000));
+        timer_.expires_at(boost::asio::steady_timer::clock_type::now() + std::chrono::milliseconds(duration_in_ms));
         timer_.async_wait(std::bind(&secure_transport::timer_handler, shared_from_this(), on_message_callback,
-                                    std::placeholders::_1));
+                                    std::placeholders::_1, duration_in_ms));
     }
     void set_timer(unsigned short duration_in_ms, std::function<void()>&& callback)
     {
         timer_.expires_at(boost::asio::steady_timer::clock_type::now() + std::chrono::milliseconds(duration_in_ms));
-        timer_.async_wait(
-            std::bind(&secure_transport::timer_handler, shared_from_this(), callback, std::placeholders::_1));
+        timer_.async_wait(std::bind(&secure_transport::timer_handler, shared_from_this(), callback,
+                                    std::placeholders::_1, duration_in_ms));
     }
 
     void start()
