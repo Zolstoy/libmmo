@@ -38,9 +38,7 @@ start(game_cycle &&cycle, std::vector<uint8_t> const &cert_pem, std::vector<uint
       unsigned short tick_in_ms, unsigned short port)
 {
     if (tick_in_ms == 0)
-    {
         throw std::invalid_argument("Tick interval must be greater than 0");
-    }
 
     std::map<size_t, std::shared_ptr<player>> players;
     std::map<tls_session *, size_t>           session_to_player_id;

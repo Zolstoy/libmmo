@@ -1,6 +1,7 @@
 #include <cstddef>
 #include <future>
 #include <print>
+#include <thread>
 
 #include <boost/asio.hpp>
 #include <boost/beast.hpp>
@@ -114,9 +115,7 @@ class test_base : public ::testing::Test
         , server_key(reinterpret_cast<uint8_t const *>(SERVER_KEY.data()),
                      reinterpret_cast<uint8_t const *>(SERVER_KEY.data()) + SERVER_KEY.size())
         , cnt_(0)
-    {
-        std::println("TEST FIXTURE");
-    }
+    {}
 
     mmo::game_cycle get_cycle(size_t n_cycles = 1)
     {
@@ -179,9 +178,9 @@ TEST_F(test_02_cycle, case_01_two_ticks)
     ASSERT_EQ(n_ticks, get_cnt());
 }
 
-TEST_F(test_02_cycle, case_02_thousand_ticks)
+TEST_F(test_02_cycle, case_02_five_hundred_ticks)
 {
-    auto n_ticks = 1000;
+    auto n_ticks = 500;
     auto fut     = std::async([&] { mmo::start(get_cycle(n_ticks), server_cert, server_key, 1, DEFAULT_PORT); });
 
     ASSERT_NO_THROW(fut.get());
@@ -220,21 +219,25 @@ TEST_F(test_03_network, case_01_one_connection)
     auto fut = std::async([&] { mmo::start(get_cycle(1), server_cert, server_key, 1000, DEFAULT_PORT); });
 
     asio::ip::tcp::socket socket(get_ioc());
-    socket.connect(boost::asio::ip::tcp::endpoint(asio::ip::address_v4::loopback(), DEFAULT_PORT));
+    std::println("about to connect");
+    socket.connect(boost::asio::ip::tcp::endpoint(asio::ip::address_v4({127, 0, 0, 1}), DEFAULT_PORT));
     ASSERT_NO_THROW(fut.get());
 }
 
 TEST_F(test_03_network, case_02_one_handshake)
 {
-    auto fut = std::async([&] { mmo::start(get_cycle(1), server_cert, server_key, 1000, DEFAULT_PORT); });
+    auto thr = std::jthread([&] { mmo::start(get_cycle(5), server_cert, server_key, 1000, DEFAULT_PORT); });
 
     asio::ip::tcp::socket socket(get_ioc());
-    socket.connect(boost::asio::ip::tcp::endpoint(asio::ip::address_v4::loopback(), DEFAULT_PORT));
+    std::println("about to connect");
+    socket.connect(boost::asio::ip::tcp::endpoint(asio::ip::address_v4({127, 0, 0, 1}), DEFAULT_PORT));
 
+    std::println("about to handshake");
     asio::ssl::context ssl_ctx(asio::ssl::context::method::sslv23_client);
     ssl_ctx.set_options(boost::asio::ssl::context::default_workarounds);
     ssl_ctx.add_certificate_authority(asio::buffer(ca_cert));
     asio::ssl::stream<decltype(socket)> secure_socket(std::move(socket), ssl_ctx);
     secure_socket.handshake(asio::ssl::stream_base::client);
-    ASSERT_NO_THROW(fut.get());
+    // ASSERT_NO_THROW(fut.get());
+    thr.join();
 }

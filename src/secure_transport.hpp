@@ -53,6 +53,7 @@ struct secure_transport : public std::enable_shared_from_this<secure_transport> 
         if (ec)
             return;
 
+        std::println("New connection");
         auto new_session = std::make_shared<tls_session>(std::move(socket), *ssl_context, on_message_);
         new_session->run_async();
         player_sessions.push_back(new_session);
