@@ -43,9 +43,9 @@ jobs:
 
       - run: pip install meson ninja
 
-      - run: meson setup --buildtype debug --backend=ninja build
+      - run: meson setup --buildtype debug --backend=ninja build --default-library=static
         env:
           BOOST_ROOT: "${{ github.workspace }}/boost/boost"
 
       - run: meson compile -C build
-      - run: meson test -C build
+      - run: meson test -C build -v

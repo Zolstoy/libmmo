@@ -47,4 +47,4 @@ jobs:
           BOOST_ROOT: "${{ github.workspace }}/boost/boost"
 
       - run: meson compile -C build
-      - run: meson test -C build
+      - run: meson test -C build -v

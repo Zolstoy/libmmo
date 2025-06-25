@@ -5,8 +5,10 @@
 #include <cstddef>
 #include <functional>
 #include <map>
+#include <memory>
 #include <queue>
 #include <vector>
+
 
 namespace mmo {
 
