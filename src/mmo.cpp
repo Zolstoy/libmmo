@@ -3,7 +3,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <map>
-#include <print>
 
 #include "secure_transport.hpp"
 #include "session.hpp"
@@ -32,7 +31,6 @@ on_message_(std::shared_ptr<tls_session> session, std::string const &message,
     }
     auto player_id = session_to_player_id[session.get()];
     players[player_id]->in.push(message);
-    std::println("Player {}: {}", player_id, message);
 }
 
 void

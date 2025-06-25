@@ -82,7 +82,6 @@ class test_01_start : public ::testing::Test
         "-----END PRIVATE KEY-----";
 
    public:
-    static constexpr size_t         INSTANT_TICK = 1;
     static constexpr unsigned short DEFAULT_PORT = 8685;
 
    public:
@@ -123,21 +122,21 @@ class test_01_start : public ::testing::Test
 
 TEST_F(test_01_start, case_01_call_nominal)
 {
-    ASSERT_NO_THROW(mmo::start(get_cycle(), server_cert, server_key, INSTANT_TICK, DEFAULT_PORT));
+    ASSERT_NO_THROW(mmo::start(get_cycle(), server_cert, server_key, 1, DEFAULT_PORT));
     ASSERT_EQ(1, get_cnt());
 }
 
 TEST_F(test_01_start, case_02_call_failure_bad_cert)
 {
-    ASSERT_ANY_THROW(mmo::start(get_cycle(), std::vector(server_cert.cbegin(), server_cert.cbegin()), server_key,
-                                INSTANT_TICK, DEFAULT_PORT));
+    ASSERT_ANY_THROW(
+        mmo::start(get_cycle(), std::vector(server_cert.cbegin(), server_cert.cbegin()), server_key, 1, DEFAULT_PORT));
     ASSERT_EQ(0, get_cnt());
 }
 
 TEST_F(test_01_start, case_03_call_failure_bad_key)
 {
-    ASSERT_ANY_THROW(mmo::start(get_cycle(), server_cert, std::vector(server_key.cbegin(), server_key.cbegin()),
-                                INSTANT_TICK, DEFAULT_PORT));
+    ASSERT_ANY_THROW(
+        mmo::start(get_cycle(), server_cert, std::vector(server_key.cbegin(), server_key.cbegin()), 1, DEFAULT_PORT));
     ASSERT_EQ(0, get_cnt());
 }
 
@@ -149,24 +148,45 @@ TEST_F(test_01_start, case_04_call_failure_tick_zero)
 
 TEST_F(test_01_start, case_05_two_ticks)
 {
-    auto fut = std::async([&] { mmo::start(get_cycle(2), server_cert, server_key, INSTANT_TICK, DEFAULT_PORT); });
+    auto n_ticks = 2;
+    auto fut     = std::async([&] { mmo::start(get_cycle(n_ticks), server_cert, server_key, 1, DEFAULT_PORT); });
 
     ASSERT_NO_THROW(fut.get());
-    ASSERT_EQ(2, get_cnt());
+    ASSERT_EQ(n_ticks, get_cnt());
 }
 
-TEST_F(test_01_start, case_05_three_ticks)
+TEST_F(test_01_start, case_06_thousand_ticks)
 {
-    auto fut = std::async([&] { mmo::start(get_cycle(3), server_cert, server_key, INSTANT_TICK, DEFAULT_PORT); });
+    auto n_ticks = 1000;
+    auto fut     = std::async([&] { mmo::start(get_cycle(n_ticks), server_cert, server_key, 1, DEFAULT_PORT); });
 
     ASSERT_NO_THROW(fut.get());
-    ASSERT_EQ(3, get_cnt());
+    ASSERT_EQ(n_ticks, get_cnt());
 }
 
-TEST_F(test_01_start, case_06_forty_ticks)
+TEST_F(test_01_start, case_07_hundred_ticks_ten_millis)
 {
-    auto fut = std::async([&] { mmo::start(get_cycle(40), server_cert, server_key, 10, DEFAULT_PORT); });
+    auto n_ticks = 100;
+    auto fut     = std::async([&] { mmo::start(get_cycle(n_ticks), server_cert, server_key, 10, DEFAULT_PORT); });
 
     ASSERT_NO_THROW(fut.get());
-    ASSERT_EQ(40, get_cnt());
+    ASSERT_EQ(n_ticks, get_cnt());
+}
+
+TEST_F(test_01_start, case_08_ten_ticks_hundred_millis)
+{
+    auto n_ticks = 10;
+    auto fut     = std::async([&] { mmo::start(get_cycle(n_ticks), server_cert, server_key, 100, DEFAULT_PORT); });
+
+    ASSERT_NO_THROW(fut.get());
+    ASSERT_EQ(n_ticks, get_cnt());
+}
+
+TEST_F(test_01_start, case_09_one_tick_thousand_millis)
+{
+    auto n_ticks = 1;
+    auto fut     = std::async([&] { mmo::start(get_cycle(n_ticks), server_cert, server_key, 1000, DEFAULT_PORT); });
+
+    ASSERT_NO_THROW(fut.get());
+    ASSERT_EQ(n_ticks, get_cnt());
 }

@@ -1,4 +1,4 @@
-name: WINDOWS|BUILD
+name: LINUX|BUILD|TESTS
 permissions:
   contents: read
   actions: read
@@ -20,37 +20,32 @@ on:
       - '**.hpp'
       - '**.cpp'
       - 'meson.build'
-      - '.github/workflows/windows_*.yml'
+      - '.github/workflows/linux_*.yml'
 
 jobs:
   build:
     name: Build
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
       - uses: MarkusJx/install-boost@v2
         with:
           boost_version: 1.87.0
-          platform_version: 2022
-          toolset: msvc
-          link: shared
+          platform_version: 22.04
+          toolset: gcc
+          arch: x86
 
-      - uses: ilammy/msvc-dev-cmd@v1
+      - uses: egor-tensin/setup-gcc@v1
+        with:
+          version: latest
+          platform: x64
 
       - run: pip install meson ninja
 
-      - run: |
-          $PWD=pwd
-          meson setup --backend=ninja --buildtype debug build --default-library=static
+      - run: meson setup --buildtype debug --backend=ninja build
         env:
           BOOST_ROOT: "${{ github.workspace }}/boost/boost"
-        
+
       - run: meson compile -C build
-
-      - run: tar -zcvf build.tar.gz build meson.build
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: build
-          path: build.tar.gz
+      - run: meson test -C build
