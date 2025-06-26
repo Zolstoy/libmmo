@@ -4,7 +4,9 @@
 #include <thread>
 
 #include <boost/asio.hpp>
+#include <boost/asio/ssl.hpp>
 #include <boost/beast.hpp>
+#include <boost/beast/websocket/ssl.hpp>
 
 #include <mmo/mmo.hpp>
 
@@ -15,6 +17,7 @@
 #include "boost/asio/ssl/context.hpp"
 #include "boost/asio/ssl/stream.hpp"
 #include "boost/asio/ssl/stream_base.hpp"
+#include "boost/system/detail/error_code.hpp"
 
 using namespace boost;
 
@@ -115,13 +118,15 @@ class test_base : public ::testing::Test
         , server_key(reinterpret_cast<uint8_t const *>(SERVER_KEY.data()),
                      reinterpret_cast<uint8_t const *>(SERVER_KEY.data()) + SERVER_KEY.size())
         , cnt_(0)
-    {}
-
+    {
+        std::println("in constructor");
+    }
     mmo::game_cycle get_cycle(size_t n_cycles = 1)
     {
         return [cnt = std::ref(cnt_), n = n_cycles](
                    float, std::map<size_t, std::shared_ptr<mmo::player>> const &) -> mmo::order {
             ++cnt;
+            std::println("for tests: TICK");
             if (cnt == n)
                 return mmo::order::stop;
             return mmo::order::keep_going;
@@ -226,18 +231,25 @@ TEST_F(test_03_network, case_01_one_connection)
 
 TEST_F(test_03_network, case_02_one_handshake)
 {
-    auto thr = std::jthread([&] { mmo::start(get_cycle(5), server_cert, server_key, 1000, DEFAULT_PORT); });
+    auto thr = std::jthread([&] { mmo::start(get_cycle(50), server_cert, server_key, 100, DEFAULT_PORT); });
 
     asio::ip::tcp::socket socket(get_ioc());
     std::println("about to connect");
-    socket.connect(boost::asio::ip::tcp::endpoint(asio::ip::address_v4({127, 0, 0, 1}), DEFAULT_PORT));
+    socket.connect(boost::asio::ip::tcp::endpoint(asio::ip::make_address("localhost"), DEFAULT_PORT));
 
     std::println("about to handshake");
     asio::ssl::context ssl_ctx(asio::ssl::context::method::sslv23_client);
-    ssl_ctx.set_options(boost::asio::ssl::context::default_workarounds);
+    ssl_ctx.set_options(asio::ssl::context::default_workarounds);
     ssl_ctx.add_certificate_authority(asio::buffer(ca_cert));
+    ssl_ctx.set_verify_mode(asio::ssl::verify_peer);
     asio::ssl::stream<decltype(socket)> secure_socket(std::move(socket), ssl_ctx);
-    secure_socket.handshake(asio::ssl::stream_base::client);
+    secure_socket.set_verify_callback(asio::ssl::host_name_verification("localhost"));
+
+    secure_socket.async_handshake(asio::ssl::stream_base::client,
+                                  [](boost::system::error_code ec) { std::println("handshaked"); });
+
+    auto fut = std::async([&] { get_ioc().run(); });
+    fut.get();
     // ASSERT_NO_THROW(fut.get());
     thr.join();
 }

@@ -21,25 +21,27 @@ using namespace boost;
 namespace mmo {
 
 struct secure_transport : public std::enable_shared_from_this<secure_transport> {
-    boost::asio::io_context                         io_context;
-    std::shared_ptr<boost::asio::ssl::context>      ssl_context;
-    std::shared_ptr<boost::asio::ip::tcp::acceptor> acceptor;
-    std::vector<std::shared_ptr<tls_session>>       player_sessions;
-    unsigned short                                  port_;
-    on_message                                      on_message_;
-    boost::asio::steady_timer                       timer_;
+    boost::asio::io_context                    io_context;
+    std::shared_ptr<boost::asio::ssl::context> ssl_context;
+    boost::asio::ip::tcp::acceptor             acceptor;
+    std::vector<std::shared_ptr<tls_session>>  player_sessions;
+    unsigned short                             port_;
+    on_message                                 on_message_;
+    boost::asio::steady_timer                  timer_;
 
-    secure_transport(short port, std::vector<uint8_t> const& cert_pem, std::vector<uint8_t> const& key_pem,
+    secure_transport(unsigned short port, std::vector<uint8_t> const& cert_pem, std::vector<uint8_t> const& key_pem,
                      on_message on_message_callback)
-        : port_(port)
+        : io_context()
+        , acceptor(io_context, {asio::ip::make_address("localhost"), port})
+        , port_(port)
         , on_message_(std::move(on_message_callback))
         , timer_(io_context)
     {
-        acceptor = std::make_shared<boost::asio::ip::tcp::acceptor>(io_context);
-        acceptor->open(boost::asio::ip::tcp::v4());
-        acceptor->set_option(boost::asio::socket_base::reuse_address(true));
-        acceptor->bind(boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), port_));
-        acceptor->listen();
+        // acceptor = std::make_shared<boost::asio::ip::tcp::acceptor>(io_context);
+        // acceptor->open(boost::asio::ip::tcp::v4());
+        acceptor.set_option(boost::asio::socket_base::reuse_address(true));
+        // acceptor->bind(boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), port_));
+        acceptor.listen();
 
         ssl_context = std::make_shared<boost::asio::ssl::context>(boost::asio::ssl::context::sslv23_server);
         ssl_context->set_options(boost::asio::ssl::context::default_workarounds);
@@ -94,7 +96,7 @@ struct secure_transport : public std::enable_shared_from_this<secure_transport> 
 
     void do_accept()
     {
-        acceptor->async_accept(
+        acceptor.async_accept(
             std::bind(&secure_transport::on_accept, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
     }
 };
