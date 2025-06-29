@@ -76,7 +76,7 @@ class session : public std::enable_shared_from_this<session<IsTls>>
             ws_.async_accept(boost::beast::bind_front_handler(&session::on_accept, session<IsTls>::shared_from_this()));
         } else
         {
-            std::println("ASYNC HANDSHAKE");
+            std::println("Session: waiting for handshake...");
             ws_.next_layer().async_handshake(
                 boost::asio::ssl::stream_base::server,
                 boost::beast::bind_front_handler(&session::on_handshake, session<IsTls>::shared_from_this()));

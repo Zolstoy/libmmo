@@ -119,14 +119,14 @@ class test_base : public ::testing::Test
                      reinterpret_cast<uint8_t const *>(SERVER_KEY.data()) + SERVER_KEY.size())
         , cnt_(0)
     {
-        std::println("in constructor");
+        // std::println("in constructor");
     }
     mmo::game_cycle get_cycle(size_t n_cycles = 1)
     {
         return [cnt = std::ref(cnt_), n = n_cycles](
                    float, std::map<size_t, std::shared_ptr<mmo::player>> const &) -> mmo::order {
             ++cnt;
-            std::println("for tests: TICK");
+            // std::println("for tests: TICK");
             if (cnt == n)
                 return mmo::order::stop;
             return mmo::order::keep_going;
@@ -224,18 +224,17 @@ TEST_F(test_03_network, case_01_one_connection)
     auto fut = std::async([&] { mmo::start(get_cycle(1), server_cert, server_key, 1000, DEFAULT_PORT); });
 
     asio::ip::tcp::socket socket(get_ioc());
-    std::println("about to connect");
     socket.connect(boost::asio::ip::tcp::endpoint(asio::ip::address_v4({127, 0, 0, 1}), DEFAULT_PORT));
     ASSERT_NO_THROW(fut.get());
 }
 
 TEST_F(test_03_network, case_02_one_handshake)
 {
-    auto thr = std::jthread([&] { mmo::start(get_cycle(50), server_cert, server_key, 100, DEFAULT_PORT); });
+    auto fut = std::async([&] { mmo::start(get_cycle(50), server_cert, server_key, 100, DEFAULT_PORT); });
 
-    asio::ip::tcp::socket socket(get_ioc());
-    std::println("about to connect");
-    socket.connect(boost::asio::ip::tcp::endpoint(asio::ip::make_address("localhost"), DEFAULT_PORT));
+    asio::ip::tcp::socket          socket(get_ioc());
+    boost::asio::ip::tcp::resolver resolver(get_ioc());
+    boost::asio::connect(socket, resolver.resolve("localhost", std::to_string(DEFAULT_PORT)));
 
     std::println("about to handshake");
     asio::ssl::context ssl_ctx(asio::ssl::context::method::sslv23_client);
@@ -247,9 +246,6 @@ TEST_F(test_03_network, case_02_one_handshake)
 
     secure_socket.async_handshake(asio::ssl::stream_base::client,
                                   [](boost::system::error_code ec) { std::println("handshaked"); });
-
-    auto fut = std::async([&] { get_ioc().run(); });
-    fut.get();
-    // ASSERT_NO_THROW(fut.get());
-    thr.join();
+    get_ioc().run();
+    ASSERT_NO_THROW(fut.get());
 }

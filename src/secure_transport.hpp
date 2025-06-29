@@ -4,6 +4,7 @@
 
 #include <chrono>
 #include <functional>
+#include <print>
 
 #include <boost/asio.hpp>
 #include <boost/asio/buffer.hpp>
@@ -32,7 +33,7 @@ struct secure_transport : public std::enable_shared_from_this<secure_transport> 
     secure_transport(unsigned short port, std::vector<uint8_t> const& cert_pem, std::vector<uint8_t> const& key_pem,
                      on_message on_message_callback)
         : io_context()
-        , acceptor(io_context, {asio::ip::make_address("localhost"), port})
+        , acceptor(io_context, {asio::ip::make_address("127.0.0.1"), port})
         , port_(port)
         , on_message_(std::move(on_message_callback))
         , timer_(io_context)
@@ -55,7 +56,7 @@ struct secure_transport : public std::enable_shared_from_this<secure_transport> 
         if (ec)
             return;
 
-        std::println("New connection");
+        std::println("Server: new connection");
         auto new_session = std::make_shared<tls_session>(std::move(socket), *ssl_context, on_message_);
         new_session->run_async();
         player_sessions.push_back(new_session);
@@ -96,6 +97,7 @@ struct secure_transport : public std::enable_shared_from_this<secure_transport> 
 
     void do_accept()
     {
+        std::print("Server: listenning...");
         acceptor.async_accept(
             std::bind(&secure_transport::on_accept, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
     }
