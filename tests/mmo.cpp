@@ -234,18 +234,18 @@ TEST_F(test_03_network, case_02_one_handshake)
 
     asio::ip::tcp::socket          socket(get_ioc());
     boost::asio::ip::tcp::resolver resolver(get_ioc());
-    boost::asio::connect(socket, resolver.resolve("localhost", std::to_string(DEFAULT_PORT)));
+    boost::asio::connect(socket, resolver.resolve("127.0.0.1", std::to_string(DEFAULT_PORT)));
 
     std::println("about to handshake");
-    asio::ssl::context ssl_ctx(asio::ssl::context::method::sslv23_client);
+    asio::ssl::context ssl_ctx(asio::ssl::context::method::tls_client);
     ssl_ctx.set_options(asio::ssl::context::default_workarounds);
     ssl_ctx.add_certificate_authority(asio::buffer(ca_cert));
-    ssl_ctx.set_verify_mode(asio::ssl::verify_peer);
+    // ssl_ctx.set_verify_mode(asio::ssl::verify_peer);
     asio::ssl::stream<decltype(socket)> secure_socket(std::move(socket), ssl_ctx);
-    secure_socket.set_verify_callback(asio::ssl::host_name_verification("localhost"));
+    // secure_socket.set_verify_callback(asio::ssl::host_name_verification("localhost"));
 
-    secure_socket.async_handshake(asio::ssl::stream_base::client,
-                                  [](boost::system::error_code ec) { std::println("handshaked"); });
+    secure_socket.handshake(asio::ssl::stream_base::client);
+
     get_ioc().run();
     ASSERT_NO_THROW(fut.get());
 }

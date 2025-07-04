@@ -17,6 +17,8 @@
 
 #include "session.hpp"
 
+#include "boost/asio/ip/tcp.hpp"
+
 using namespace boost;
 
 namespace mmo {
@@ -33,7 +35,7 @@ struct secure_transport : public std::enable_shared_from_this<secure_transport> 
     secure_transport(unsigned short port, std::vector<uint8_t> const& cert_pem, std::vector<uint8_t> const& key_pem,
                      on_message on_message_callback)
         : io_context()
-        , acceptor(io_context, {asio::ip::make_address("127.0.0.1"), port})
+        , acceptor(io_context, {asio::ip::tcp::v4(), port})
         , port_(port)
         , on_message_(std::move(on_message_callback))
         , timer_(io_context)
@@ -44,7 +46,7 @@ struct secure_transport : public std::enable_shared_from_this<secure_transport> 
         // acceptor->bind(boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), port_));
         acceptor.listen();
 
-        ssl_context = std::make_shared<boost::asio::ssl::context>(boost::asio::ssl::context::sslv23_server);
+        ssl_context = std::make_shared<boost::asio::ssl::context>(boost::asio::ssl::context::tls_server);
         ssl_context->set_options(boost::asio::ssl::context::default_workarounds);
 
         ssl_context->use_certificate_chain(asio::buffer(cert_pem));
@@ -97,7 +99,7 @@ struct secure_transport : public std::enable_shared_from_this<secure_transport> 
 
     void do_accept()
     {
-        std::print("Server: listenning...");
+        std::println("Server: listenning...");
         acceptor.async_accept(
             std::bind(&secure_transport::on_accept, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
     }
