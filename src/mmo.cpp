@@ -13,6 +13,7 @@ static void
 on_time_(unsigned short tick_in_ms, std::map<size_t, std::shared_ptr<player>> &players, game_cycle &cycle,
          std::shared_ptr<secure_transport> transport)
 {
+    // std::println("on time");
     auto order = cycle(tick_in_ms, players);
     if (order == order::stop)
         transport->stop();
@@ -22,6 +23,7 @@ static void
 on_message_(std::shared_ptr<tls_session> session, std::string const &message,
             std::map<size_t, std::shared_ptr<player>> &players, std::map<tls_session *, size_t> &session_to_player_id)
 {
+    // std::println("on message");
     if (!session_to_player_id.contains(session.get()))
     {
         size_t player_id                    = players.size() + 1;
@@ -37,6 +39,7 @@ void
 start(game_cycle &&cycle, std::vector<uint8_t> const &cert_pem, std::vector<uint8_t> const &key_pem,
       unsigned short tick_in_ms, unsigned short port)
 {
+    // std::println("start");
     if (tick_in_ms == 0)
         throw std::invalid_argument("Tick interval must be greater than 0");
 

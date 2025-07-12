@@ -2,7 +2,6 @@
 #include <future>
 #include <print>
 #include <string>
-#include <thread>
 
 #include <boost/asio.hpp>
 #include <boost/asio/ssl.hpp>
@@ -14,13 +13,13 @@
 #include <gtest/gtest.h>
 
 #include "boost/asio/io_context.hpp"
-#include "boost/asio/ip/address_v4.hpp"
 #include "boost/asio/ssl/context.hpp"
 #include "boost/asio/ssl/stream.hpp"
 #include "boost/asio/ssl/stream_base.hpp"
 #include "boost/system/detail/error_code.hpp"
 
 using namespace boost;
+using namespace std::chrono_literals;
 
 class test_base : public ::testing::Test
 {
@@ -119,15 +118,12 @@ class test_base : public ::testing::Test
         , server_key(reinterpret_cast<uint8_t const *>(SERVER_KEY.data()),
                      reinterpret_cast<uint8_t const *>(SERVER_KEY.data()) + SERVER_KEY.size())
         , cnt_(0)
-    {
-        // std::println("in constructor");
-    }
+    {}
     mmo::game_cycle get_cycle(size_t n_cycles = 1)
     {
         return [cnt = std::ref(cnt_), n = n_cycles](
                    float, std::map<size_t, std::shared_ptr<mmo::player>> const &) -> mmo::order {
             ++cnt;
-            // std::println("for tests: TICK");
             if (cnt == n)
                 return mmo::order::stop;
             return mmo::order::keep_going;
@@ -151,34 +147,34 @@ using test_03_network = test_base;
 
 TEST_F(test_01_start, case_01_call_nominal)
 {
-    ASSERT_NO_THROW(mmo::start(get_cycle(), server_cert, server_key, 1, DEFAULT_PORT));
+    ASSERT_NO_THROW(mmo::start(get_cycle(), server_cert, server_key, 1, ::rand()));
     ASSERT_EQ(1, get_cnt());
 }
 
 TEST_F(test_01_start, case_02_call_failure_bad_cert)
 {
     ASSERT_ANY_THROW(
-        mmo::start(get_cycle(), std::vector(server_cert.cbegin(), server_cert.cbegin()), server_key, 1, DEFAULT_PORT));
+        mmo::start(get_cycle(), std::vector(server_cert.cbegin(), server_cert.cbegin()), server_key, 1, ::rand()));
     ASSERT_EQ(0, get_cnt());
 }
 
 TEST_F(test_01_start, case_03_call_failure_bad_key)
 {
     ASSERT_ANY_THROW(
-        mmo::start(get_cycle(), server_cert, std::vector(server_key.cbegin(), server_key.cbegin()), 1, DEFAULT_PORT));
+        mmo::start(get_cycle(), server_cert, std::vector(server_key.cbegin(), server_key.cbegin()), 1, ::rand()));
     ASSERT_EQ(0, get_cnt());
 }
 
 TEST_F(test_01_start, case_04_call_failure_tick_zero)
 {
-    ASSERT_ANY_THROW(mmo::start(get_cycle(), server_cert, server_key, 0, DEFAULT_PORT));
+    ASSERT_ANY_THROW(mmo::start(get_cycle(), server_cert, server_key, 0, ::rand()));
     ASSERT_EQ(0, get_cnt());
 }
 
 TEST_F(test_02_cycle, case_01_two_ticks)
 {
     auto n_ticks = 2;
-    auto fut     = std::async([&] { mmo::start(get_cycle(n_ticks), server_cert, server_key, 1, DEFAULT_PORT); });
+    auto fut     = std::async([&] { mmo::start(get_cycle(n_ticks), server_cert, server_key, 1, ::rand()); });
 
     ASSERT_NO_THROW(fut.get());
     ASSERT_EQ(n_ticks, get_cnt());
@@ -187,7 +183,7 @@ TEST_F(test_02_cycle, case_01_two_ticks)
 TEST_F(test_02_cycle, case_02_five_hundred_ticks)
 {
     auto n_ticks = 500;
-    auto fut     = std::async([&] { mmo::start(get_cycle(n_ticks), server_cert, server_key, 1, DEFAULT_PORT); });
+    auto fut     = std::async([&] { mmo::start(get_cycle(n_ticks), server_cert, server_key, 1, ::rand()); });
 
     ASSERT_NO_THROW(fut.get());
     ASSERT_EQ(n_ticks, get_cnt());
@@ -196,7 +192,7 @@ TEST_F(test_02_cycle, case_02_five_hundred_ticks)
 TEST_F(test_02_cycle, case_03_hundred_ticks_ten_millis)
 {
     auto n_ticks = 100;
-    auto fut     = std::async([&] { mmo::start(get_cycle(n_ticks), server_cert, server_key, 10, DEFAULT_PORT); });
+    auto fut     = std::async([&] { mmo::start(get_cycle(n_ticks), server_cert, server_key, 10, ::rand()); });
 
     ASSERT_NO_THROW(fut.get());
     ASSERT_EQ(n_ticks, get_cnt());
@@ -205,7 +201,7 @@ TEST_F(test_02_cycle, case_03_hundred_ticks_ten_millis)
 TEST_F(test_02_cycle, case_04_ten_ticks_hundred_millis)
 {
     auto n_ticks = 10;
-    auto fut     = std::async([&] { mmo::start(get_cycle(n_ticks), server_cert, server_key, 100, DEFAULT_PORT); });
+    auto fut     = std::async([&] { mmo::start(get_cycle(n_ticks), server_cert, server_key, 100, ::rand()); });
 
     ASSERT_NO_THROW(fut.get());
     ASSERT_EQ(n_ticks, get_cnt());
@@ -214,7 +210,7 @@ TEST_F(test_02_cycle, case_04_ten_ticks_hundred_millis)
 TEST_F(test_02_cycle, case_05_one_tick_thousand_millis)
 {
     auto n_ticks = 1;
-    auto fut     = std::async([&] { mmo::start(get_cycle(n_ticks), server_cert, server_key, 1000, DEFAULT_PORT); });
+    auto fut     = std::async([&] { mmo::start(get_cycle(n_ticks), server_cert, server_key, 1000, ::rand()); });
 
     ASSERT_NO_THROW(fut.get());
     ASSERT_EQ(n_ticks, get_cnt());
@@ -222,26 +218,31 @@ TEST_F(test_02_cycle, case_05_one_tick_thousand_millis)
 
 TEST_F(test_03_network, case_01_one_connection)
 {
-    auto fut = std::async([&] { mmo::start(get_cycle(1), server_cert, server_key, 1000, DEFAULT_PORT); });
+    unsigned short port = ::rand();
+    auto fut = std::async(std::launch::async, [&] { mmo::start(get_cycle(3), server_cert, server_key, 1000, port); });
+    std::this_thread::sleep_for(500ms);
 
-    asio::ip::tcp::socket socket(get_ioc());
-    socket.connect(boost::asio::ip::tcp::endpoint(asio::ip::address_v4({127, 0, 0, 1}), DEFAULT_PORT));
+    asio::ip::tcp::socket          socket(get_ioc());
+    boost::asio::ip::tcp::resolver resolver(get_ioc());
+
+    auto const results = resolver.resolve("localhost", std::to_string(port));
+    socket.connect(*results);
     ASSERT_NO_THROW(fut.get());
 }
 
 TEST_F(test_03_network, case_02_one_handshake)
 {
-    auto fut =
-        std::async(std::launch::async, [&] { mmo::start(get_cycle(50), server_cert, server_key, 100, DEFAULT_PORT); });
+    unsigned short port = ::rand();
+    auto fut = std::async(std::launch::async, [&] { mmo::start(get_cycle(3), server_cert, server_key, 1000, port); });
+    std::this_thread::sleep_for(500ms);
 
     asio::ip::tcp::socket          socket(get_ioc());
     boost::asio::ip::tcp::resolver resolver(get_ioc());
 
-    auto const results = resolver.resolve("localhost", std::to_string(DEFAULT_PORT));
+    auto const results = resolver.resolve("localhost", std::to_string(port));
 
     boost::asio::connect(socket, results);
 
-    std::println("about to handshake");
     asio::ssl::context ssl_ctx(asio::ssl::context::tlsv12_client);
     ssl_ctx.add_certificate_authority(asio::buffer(ca_cert));
     ssl_ctx.set_verify_mode(asio::ssl::verify_peer);
@@ -255,6 +256,5 @@ TEST_F(test_03_network, case_02_one_handshake)
 
     secure_socket.handshake(asio::ssl::stream_base::client);
 
-    get_ioc().run();
     ASSERT_NO_THROW(fut.get());
 }
