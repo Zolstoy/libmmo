@@ -42,12 +42,12 @@ struct secure_transport : public std::enable_shared_from_this<secure_transport> 
     {
         // acceptor = std::make_shared<boost::asio::ip::tcp::acceptor>(io_context);
         // acceptor->open(boost::asio::ip::tcp::v4());
-        acceptor.set_option(boost::asio::socket_base::reuse_address(true));
+        // acceptor.set_option(boost::asio::socket_base::reuse_address(true));
         // acceptor->bind(boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), port_));
         acceptor.listen();
 
-        ssl_context = std::make_shared<boost::asio::ssl::context>(boost::asio::ssl::context::tls_server);
-        ssl_context->set_options(boost::asio::ssl::context::default_workarounds);
+        ssl_context = std::make_shared<boost::asio::ssl::context>(boost::asio::ssl::context::tlsv12_server);
+        // ssl_context->set_options(boost::asio::ssl::context::default_workarounds);
 
         ssl_context->use_certificate_chain(asio::buffer(cert_pem));
         ssl_context->use_private_key(asio::buffer(key_pem), boost::asio::ssl::context::pem);
@@ -56,7 +56,10 @@ struct secure_transport : public std::enable_shared_from_this<secure_transport> 
     void on_accept(const boost::system::error_code& ec, boost::asio::ip::tcp::socket socket)
     {
         if (ec)
+        {
+            std::println("Server: accept error");
             return;
+        }
 
         std::println("Server: new connection");
         auto new_session = std::make_shared<tls_session>(std::move(socket), *ssl_context, on_message_);

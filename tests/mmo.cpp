@@ -1,6 +1,7 @@
 #include <cstddef>
 #include <future>
 #include <print>
+#include <string>
 #include <thread>
 
 #include <boost/asio.hpp>
@@ -230,19 +231,27 @@ TEST_F(test_03_network, case_01_one_connection)
 
 TEST_F(test_03_network, case_02_one_handshake)
 {
-    auto fut = std::async([&] { mmo::start(get_cycle(50), server_cert, server_key, 100, DEFAULT_PORT); });
+    auto fut =
+        std::async(std::launch::async, [&] { mmo::start(get_cycle(50), server_cert, server_key, 100, DEFAULT_PORT); });
 
     asio::ip::tcp::socket          socket(get_ioc());
     boost::asio::ip::tcp::resolver resolver(get_ioc());
-    boost::asio::connect(socket, resolver.resolve("127.0.0.1", std::to_string(DEFAULT_PORT)));
+
+    auto const results = resolver.resolve("localhost", std::to_string(DEFAULT_PORT));
+
+    boost::asio::connect(socket, results);
 
     std::println("about to handshake");
-    asio::ssl::context ssl_ctx(asio::ssl::context::method::tls_client);
-    ssl_ctx.set_options(asio::ssl::context::default_workarounds);
+    asio::ssl::context ssl_ctx(asio::ssl::context::tlsv12_client);
     ssl_ctx.add_certificate_authority(asio::buffer(ca_cert));
-    // ssl_ctx.set_verify_mode(asio::ssl::verify_peer);
+    ssl_ctx.set_verify_mode(asio::ssl::verify_peer);
     asio::ssl::stream<decltype(socket)> secure_socket(std::move(socket), ssl_ctx);
-    // secure_socket.set_verify_callback(asio::ssl::host_name_verification("localhost"));
+
+    if (!SSL_set_tlsext_host_name(secure_socket.native_handle(), "localhost"))
+    {
+        boost::system::error_code ec{static_cast<int>(::ERR_get_error()), boost::asio::error::get_ssl_category()};
+        throw boost::system::system_error{ec};
+    }
 
     secure_socket.handshake(asio::ssl::stream_base::client);
 
