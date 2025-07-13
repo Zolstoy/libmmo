@@ -1,6 +1,5 @@
 #include <cstddef>
 #include <future>
-#include <print>
 #include <string>
 
 #include <boost/asio.hpp>
@@ -226,7 +225,7 @@ TEST_F(test_03_network, case_01_one_connection)
     boost::asio::ip::tcp::resolver resolver(get_ioc());
 
     auto const results = resolver.resolve("localhost", std::to_string(port));
-    socket.connect(*results);
+    boost::asio::connect(socket, results);
     ASSERT_NO_THROW(fut.get());
 }
 
